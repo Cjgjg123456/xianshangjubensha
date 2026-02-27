@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8"><title>剧遇 - 创作者空间</title>
+    <style>
+        :root { --primary: #ff6600; --secondary: #00e5ff; --border: rgba(255,255,255,0.1); }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:sans-serif; }
+        body { width:100vw; height:100vh; background:url("images/bg.jpg") no-repeat center; background-size:cover; display:flex; padding:20px; color:#fff; overflow:hidden; }
+        .sidebar { width:280px; height:100%; background:linear-gradient(180deg, rgba(15,26,58,0.95), rgba(26,42,90,0.95)); border-radius:20px; padding:40px 20px; backdrop-filter:blur(15px); border:1px solid var(--border); }
+        .main-content { flex:1; height:100%; background:rgba(18, 22, 33, 0.85); backdrop-filter:blur(20px); border-radius:20px; margin-left:20px; padding:40px; overflow-y:auto; border:1px solid var(--border); }
+        .form-section { background:rgba(255,255,255,0.03); border:1px solid var(--border); border-radius:18px; padding:30px; margin-bottom:30px; }
+        .section-title { font-size:20px; color:var(--primary); margin-bottom:25px; border-left:4px solid var(--primary); padding-left:15px; display:flex; justify-content:space-between; align-items:center; }
+        .form-input, .form-select { width:100%; background:rgba(0,0,0,0.4); border:1px solid var(--border); color:#fff; padding:14px; border-radius:10px; outline:none; font-size:15px; }
+        .role-nav { display:flex; gap:12px; margin-bottom:25px; padding:8px; background:rgba(0,0,0,0.2); border-radius:14px; overflow-x:auto; }
+        .nav-item { padding:12px 28px; cursor:pointer; border-radius:10px; border:none; background:transparent; color:#888; font-weight:bold; white-space:nowrap; transition:0.3s; }
+        .nav-item.active { background:var(--primary); color:#fff; }
+        .clue-card { background:rgba(0,0,0,0.2); border-left:4px solid var(--primary); padding:20px; border-radius:15px; margin-bottom:20px; position:relative; }
+        .btn { padding:10px 20px; border-radius:10px; border:none; cursor:pointer; font-weight:bold; }
+        .btn-primary { background:linear-gradient(90deg, #ff6600, #ff3300); color:#fff; width:100%; height:60px; font-size:18px; margin-top:20px; }
+        #coverPreview { width:100px; height:135px; border-radius:10px; object-fit:cover; display:none; }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div style="text-align:center; margin-bottom:50px;"><h2>剧遇</h2></div>
+    <div style="display:flex; flex-direction:column; gap:15px;">
+        <button class="nav-item active" style="text-align:left;" onclick="location.href='my-creation.html'">📚 我的创作</button>
+        <button class="nav-item" style="text-align:left;" onclick="location.href='index.html'">🏠 返回首页</button>
+    </div>
+</div>
+<div class="main-content">
+    <div class="form-section">
+        <div class="section-title">1. 剧本全局设定</div>
+        <div style="display:grid; grid-template-columns:120px 1fr; gap:30px;">
+            <div onclick="document.getElementById('coverInput').click()" style="cursor:pointer; text-align:center;">
+                <div style="width:100px; height:135px; background:rgba(0,0,0,0.3); border:2px dashed #444; border-radius:12px; display:flex; align-items:center; justify-content:center;">
+                    <span id="uploadHint">📸</span><img id="coverPreview">
+                </div>
+                <input type="file" id="coverInput" hidden accept="image/*" onchange="handleCover(this)">
+            </div>
+            <div style="display:grid; grid-template-columns:2fr 1fr 1fr; gap:15px;">
+                <div><label>剧本名称</label><input id="scriptTitle" class="form-input"></div>
+                <div><label>角色总人数</label><input id="scriptCount" type="number" class="form-input" value="3" onchange="syncRoles()"></div>
+                <div><label>难度</label><select id="scriptDiff" class="form-select"><option>新手</option><option>进阶</option><option>烧脑</option></select></div>
+                <div style="grid-column: span 3;"><label>简介</label><textarea id="scriptIntro" class="form-input" style="height:60px;"></textarea></div>
+            </div>
+        </div>
+    </div>
+    <div class="form-section">
+        <div class="section-title">2. 详细制作 <div style="display:flex; gap:10px;"><button class="btn" onclick="addAct()">+ 增幕</button> <button class="btn" style="color:#ff3333" onclick="removeAct()">- 减幕</button></div></div>
+        <div id="roleNav" class="role-nav"></div><div id="roleEditor"></div>
+    </div>
+    <button class="btn btn-primary" onclick="submitScript()">🚀 确认并全网发布</button>
+</div>
+<script>
+    let roles = [], acts = ["第一幕", "第二幕"], clues = [], currentRoleIdx = 0, currentCoverUrl = "";
+    const editId = new URLSearchParams(window.location.search).get('scriptId');
+
+    function syncRoles() {
+        const count = parseInt(document.getElementById('scriptCount').value) || 1;
+        if(roles.length < count) {
+            for(let i = roles.length; i < count; i++) roles.push({name:`待定角色 ${i+1}`, intro:"", actsContent: acts.map(()=>"")});
+        } else if(roles.length > count) {
+            roles = roles.slice(0, count);
+            if(currentRoleIdx >= count) currentRoleIdx = 0;
+        }
+        render();
+    }
+    async function handleCover(input) {
+        if(input.files[0]) {
+            const formData = new FormData();
+            formData.append("file", input.files[0]);
+            const res = await fetch('/api/game/upload', { method: 'POST', body: formData }).then(r => r.json());
+            if(res.success) {
+                currentCoverUrl = res.data;
+                const img = document.getElementById('coverPreview');
+                img.src = currentCoverUrl; img.style.display='block';
+                document.getElementById('uploadHint').style.display='none';
+            } else alert("上传失败：" + res.msg);
+        }
+    }
+    function addAct() { acts.push(`第${acts.length+1}幕`); roles.forEach(r => r.actsContent.push("")); render(); }
+    function removeAct() { if(acts.length>1) { acts.pop(); roles.forEach(r => r.actsContent.pop()); render(); } }
+    function render() {
+        const nav = document.getElementById('roleNav'), editor = document.getElementById('roleEditor');
+        nav.innerHTML = ''; editor.innerHTML = '';
+        roles.forEach((r, i) => {
+            const btn = document.createElement('button'); btn.className = `nav-item ${i==currentRoleIdx?'active':''}`;
+            btn.innerText = r.name; btn.onclick = () => { currentRoleIdx = i; render(); };
+            nav.appendChild(btn);
+        });
+        const cur = roles[currentRoleIdx];
+        editor.innerHTML = `
+            <div style="display:grid; grid-template-columns:1fr 2fr; gap:15px; margin-bottom:20px;">
+                <input class="form-input" value="${cur.name}" oninput="roles[${currentRoleIdx}].name=this.value; updateNavName();">
+                <input class="form-input" value="${cur.intro}" oninput="roles[${currentRoleIdx}].intro=this.value;" placeholder="公开人设">
+            </div>
+            ${acts.map((a, i) => `<div style="margin-bottom:15px;"><label>${a}</label><textarea class="form-input" style="height:100px;" oninput="roles[${currentRoleIdx}].actsContent[${i}]=this.value;">${cur.actsContent[i]||''}</textarea></div>`).join('')}
+            <div id="clueContainer"></div><button class="btn" style="width:100%; background:transparent; border:1px dashed #666; color:#aaa" onclick="addClue()">+ 添加线索卡</button>
+        `;
+        clues.forEach((c, i) => { if(c.isPublic == 1 || c.roleIndex == currentRoleIdx) renderClue(c, i); });
+    }
+    function updateNavName() { document.querySelectorAll('.nav-item')[currentRoleIdx].innerText = roles[currentRoleIdx].name; }
+    function renderClue(c, i) {
+        const div = document.createElement('div'); div.className = 'clue-card';
+        div.innerHTML = `
+            <div style="display:flex; gap:10px; margin-bottom:10px;">
+                <input class="form-input" style="flex:2" value="${c.name}" oninput="clues[${i}].name=this.value;">
+                <select class="form-select" onchange="clues[${i}].actIndex=parseInt(this.value);">${acts.map((a,idx)=>`<option value="${idx}" ${c.actIndex==idx?'selected':''}>${a}</option>`).join('')}</select>
+                <select class="form-select" onchange="clues[${i}].isPublic=parseInt(this.value); render();"><option value="1" ${c.isPublic==1?'selected':''}>公共</option><option value="0" ${c.isPublic==0?'selected':''}>私密</option></select>
+                <button class="btn" style="color:red" onclick="clues.splice(${i},1); render();">删</button>
+            </div>
+            <textarea class="form-input" oninput="clues[${i}].desc=this.value;">${c.desc}</textarea>
+        `;
+        document.getElementById('clueContainer').appendChild(div);
+    }
+    function addClue() { clues.push({name: "", desc: "", actIndex: 0, isPublic: 1, roleIndex: currentRoleIdx}); render(); }
+
+    async function submitScript() {
+        const payload = { scriptId: editId ? parseInt(editId) : null, title: document.getElementById('scriptTitle').value, intro: document.getElementById('scriptIntro').value, config: document.getElementById('scriptCount').value + "人局", difficulty: document.getElementById('scriptDiff').value, coverUrl: currentCoverUrl, actNames: acts, characters: roles, clues };
+        const url = editId ? '/api/game/updateScript' : '/api/game/createScript';
+        try {
+            const res = await fetch(url, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) }).then(r => r.json());
+            if(res.success) { alert("🎉 发布成功！"); location.href='my-creation.html'; }
+            else alert("发布失败：" + res.msg);
+        } catch(e) { alert("网络异常"); }
+    }
+
+    window.onload = async () => {
+        if(editId) {
+            const res = await fetch(`/api/game/detail?scriptId=${editId}`).then(r => r.json());
+            if(res.success) {
+                const d = res.data;
+                document.getElementById('scriptTitle').value = d.script.title;
+                document.getElementById('scriptCount').value = d.script.playerCount;
+                document.getElementById('scriptDiff').value = d.script.difficulty;
+                document.getElementById('scriptIntro').value = d.script.intro;
+                currentCoverUrl = d.script.coverUrl;
+                if(currentCoverUrl) { document.getElementById('coverPreview').src=currentCoverUrl; document.getElementById('coverPreview').style.display='block'; document.getElementById('uploadHint').style.display='none'; }
+                acts = d.acts.map(a => a.actName);
+                roles = d.roles.map(r => ({ name: r.name, intro: r.background, actsContent: d.acts.map(a => d.contents.find(c=>c.roleId==r.roleId && c.actId==a.actId)?.content || "") }));
+                clues = d.clues.map(c => ({ name: c.clueName, desc: c.clueDesc, actIndex: d.acts.findIndex(a=>a.actId==c.unlockChapterId), isPublic: c.isPublic, roleIndex: d.roles.findIndex(r=>r.roleId==c.roleId) }));
+                render();
+            }
+        } else syncRoles();
+    };
+</script>
+</body>
+</html>

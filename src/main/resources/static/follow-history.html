@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剧遇 - 历史关注</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", sans-serif; }
+        body { width: 100vw; height: 100vh; background: url("images/bg.jpg") no-repeat center center; background-size: cover; display: flex; padding: 20px; overflow: hidden; }
+        .sidebar { width: 280px; height: 100%; background: linear-gradient(180deg, rgba(15,26,58,0.9), rgba(26,42,90,0.9)); border-radius: 20px; padding: 40px 20px; display: flex; flex-direction: column; backdrop-filter: blur(10px); }
+        .sidebar-logo { text-align: center; margin-bottom: 50px; }
+        .sidebar-logo h2 { color: #fff; font-size: 42px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .sidebar-logo .star { width: 25px; height: 35px; background: #ff6600; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+        .menu-list { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        .menu-item { width: 100%; height: 60px; background: transparent; border: none; border-radius: 12px; color: #fff; font-size: 18px; display: flex; align-items: center; padding: 0 20px; gap: 15px; cursor: pointer; opacity: 0.7; }
+        .menu-item.active { background: linear-gradient(90deg, #ff6600, #ff3300); opacity: 1; }
+
+        .main-content { flex: 1; height: 100%; background: rgba(18, 22, 33, 0.85); backdrop-filter: blur(15px); border-radius: 20px; margin-left: 20px; padding: 40px; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+        .page-title { font-size: 28px; color: #fff; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .back-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #fff; transition: 0.3s; }
+        .back-btn:hover { background: #ff6600; border-color: #ff6600; }
+
+        /* 关注列表网格 */
+        .user-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; overflow-y: auto; padding-right: 10px; align-content: start; }
+        .user-grid::-webkit-scrollbar { width: 6px; }
+        .user-grid::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        .user-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 15px; padding: 20px; display: flex; align-items: center; transition: 0.3s; gap: 15px; }
+        .user-card:hover { background: rgba(255,255,255,0.08); transform: translateY(-3px); }
+        .u-avatar { width: 60px; height: 60px; border-radius: 50%; object-fit: cover; border: 2px solid #555; }
+        .u-info { flex: 1; }
+        .u-name { font-size: 18px; color: #fff; font-weight: bold; margin-bottom: 5px; }
+        .u-bio { font-size: 13px; color: #888; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 120px; }
+
+        .btn-follow { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 15px; border-radius: 20px; font-size: 13px; cursor: pointer; transition: 0.3s; }
+        .btn-follow:hover { background: rgba(255,102,0,0.2); border-color: #ff6600; color: #ff9900; }
+        .btn-follow.mutual { border-color: #28a745; color: #28a745; }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-logo"><h2><span class="star"></span>剧遇</h2></div>
+    <div class="menu-list">
+        <button class="menu-item" onclick="goToProfile()"><span>👤</span><span>个人信息</span></button>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="header-top">
+        <h1 class="page-title">📍 历史关注</h1>
+        <button class="back-btn" onclick="goToProfile()">← 返回个人中心</button>
+    </div>
+
+    <div class="user-grid">
+        <div class="user-card">
+            <img src="https://via.placeholder.com/60/ff6600/fff?text=DM" class="u-avatar">
+            <div class="u-info">
+                <div class="u-name">DM-七七</div>
+                <div class="u-bio">专业恐怖本DM，带你起飞</div>
+            </div>
+            <button class="btn-follow mutual" onclick="toggleFollow(this)">互相关注</button>
+        </div>
+
+        <div class="user-card">
+            <img src="https://via.placeholder.com/60/335588/fff?text=K" class="u-avatar">
+            <div class="u-info">
+                <div class="u-name">神秘剧友_K</div>
+                <div class="u-bio">情感本狂热爱好者</div>
+            </div>
+            <button class="btn-follow" onclick="toggleFollow(this)">已关注</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function goToProfile() {
+        const username = localStorage.getItem('loginUsername') || '';
+        window.location.href = `profile.html?username=${encodeURIComponent(username)}`;
+    }
+
+    function toggleFollow(btn) {
+        if(btn.innerText.includes('关注')) {
+            btn.innerText = '+ 关注';
+            btn.style.borderColor = '#888';
+            btn.style.color = '#888';
+            btn.classList.remove('mutual');
+        } else {
+            btn.innerText = '已关注';
+            btn.style.borderColor = 'rgba(255,255,255,0.2)';
+            btn.style.color = '#fff';
+        }
+    }
+</script>
+</body>
+</html>

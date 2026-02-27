@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>剧遇 - 我的创作</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; font-family:sans-serif; }
+        body { width:100vw; height:100vh; background:url("images/bg.jpg") no-repeat center; background-size:cover; display:flex; padding:20px; color:#fff; overflow:hidden; }
+
+        /* 恢复原版侧边栏样式 */
+        .sidebar { width: 280px; height: 100%; background: linear-gradient(180deg, rgba(15,26,58,0.9), rgba(26,42,90,0.9)); border-radius: 20px; padding: 40px 20px; display: flex; flex-direction: column; backdrop-filter: blur(10px); z-index: 10;}
+        .sidebar-logo { text-align: center; margin-bottom: 50px; }
+        .sidebar-logo h2 { color: #fff; font-size: 42px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .menu-list { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        .menu-item { width: 100%; height: 60px; background: transparent; border: none; border-radius: 12px; color: #fff; font-size: 18px; display: flex; align-items: center; padding: 0 20px; gap: 15px; cursor: pointer; transition: 0.3s; opacity: 0.7; }
+        .menu-item:hover, .menu-item.active { opacity: 1; background: rgba(255,255,255,0.1); }
+
+        .main-content { flex:1; height:100%; background:rgba(18, 22, 33, 0.9); border-radius:20px; margin-left:20px; padding:40px; overflow-y:auto; border:1px solid rgba(255,255,255,0.1); }
+        .script-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(320px, 1fr)); gap:20px; margin-top:30px; }
+        .script-card { background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1); border-radius:15px; padding:20px; display:flex; gap:20px; transition:0.3s; }
+        .script-card:hover { transform: translateY(-5px); border-color: #ff6600; }
+        .script-cover { width:100px; height:135px; border-radius:10px; object-fit:cover; background:#222; border:1px solid rgba(255,255,255,0.1); }
+        .btn { padding:10px 20px; border-radius:10px; border:none; cursor:pointer; font-weight:bold; font-size:13px; }
+        .btn-primary { background:#ff6600; color:#fff; }
+    </style>
+</head>
+<body>
+
+<div class="sidebar">
+    <div class="sidebar-logo"><h2><span class="star"></span>剧遇</h2></div>
+    <div class="menu-list">
+        <button class="menu-item" onclick="goToPage('index.html')"><span>🏠</span><span>首页</span></button>
+        <button class="menu-item" onclick="goToPage('room.html')"><span>🎮</span><span>剧本大厅</span></button>
+        <button class="menu-item active" onclick="goToPage('creator.html')"><span>✒️</span><span>创作者空间</span></button>
+        <button class="menu-item" onclick="goToPage('profile.html')"><span>👤</span><span>个人信息</span></button>
+    </div>
+</div>
+
+<div class="main-content">
+    <div style="display:flex; justify-content:space-between; align-items:center;">
+        <h2 style="color:#ff9900; border-left:5px solid #ff9900; padding-left:15px;">我的创作工坊</h2>
+        <button class="btn btn-primary" style="padding:15px 30px; font-size:16px;" onclick="goToPage('creator.html')">✨ 发布新作品</button>
+    </div>
+
+    <div class="script-grid" id="scriptList"></div>
+</div>
+
+<script>
+    // 恢复原有路由跳转
+    function goToPage(url) {
+        window.location.href = url;
+    }
+
+    async function loadMyScripts() {
+        const res = await fetch('/api/game/scripts').then(r => r.json());
+        const container = document.getElementById('scriptList');
+        if (!res.data || res.data.length === 0) {
+            container.innerHTML = '<p style="color:#888; grid-column:1/-1; text-align:center; margin-top:100px;">暂无作品，快去创作吧！</p>';
+            return;
+        }
+        container.innerHTML = res.data.map(s => {
+            const actualId = s.scriptId || s.script_id || s.id;
+            return `
+            <div class="script-card">
+                <img src="${s.coverUrl || 'images/card_creator.jpg'}" class="script-cover">
+                <div style="flex:1">
+                    <h3 style="color:#00e5ff; margin-bottom:8px;">${s.title}</h3>
+                    <p style="font-size:13px; color:#aaa; margin-bottom:15px;">${s.playerCount}人 | ${s.difficulty}</p>
+                    <div style="display:flex; gap:10px;">
+                        <button class="btn btn-primary" onclick="goToPage('creator.html?scriptId=${actualId}')">编辑</button>
+                        <button class="btn" style="background:rgba(255,255,255,0.1); color:#fff;" onclick="goToPage('room.html')">去大厅开房</button>
+                    </div>
+                </div>
+            </div>
+            `;
+        }).join('');
+    }
+
+    window.onload = loadMyScripts;
+</script>
+</body>
+</html>

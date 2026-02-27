@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>剧遇 - 我的玩本记录</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", sans-serif; }
+    body { width: 100vw; height: 100vh; background: url("images/bg.jpg") no-repeat center center; background-size: cover; display: flex; padding: 20px; overflow: hidden; }
+
+    /* 侧边栏 */
+    .sidebar { width: 280px; height: 100%; background: linear-gradient(180deg, rgba(15,26,58,0.9), rgba(26,42,90,0.9)); border-radius: 20px; padding: 40px 20px; display: flex; flex-direction: column; backdrop-filter: blur(10px); }
+    .sidebar-logo { text-align: center; margin-bottom: 50px; }
+    .sidebar-logo h2 { color: #fff; font-size: 42px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+    .sidebar-logo .star { width: 25px; height: 35px; background: #ff6600; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+    .menu-list { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+    .menu-item { width: 100%; height: 60px; background: transparent; border: none; border-radius: 12px; color: #fff; font-size: 18px; display: flex; align-items: center; padding: 0 20px; gap: 15px; cursor: pointer; transition: 0.3s; opacity: 0.7; }
+    .menu-item.active { background: linear-gradient(90deg, #ff6600, #ff3300); opacity: 1; box-shadow: 0 5px 15px rgba(255, 102, 0, 0.3); }
+
+    /* 主内容区 */
+    .main-content { flex: 1; height: 100%; background: rgba(18, 22, 33, 0.85); backdrop-filter: blur(15px); border-radius: 20px; margin-left: 20px; padding: 40px; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1); }
+    .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+    .page-title { font-size: 28px; color: #fff; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+    .back-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #fff; transition: 0.3s; font-size: 14px; }
+    .back-btn:hover { background: #ff6600; border-color: #ff6600; }
+
+    /* 记录列表 */
+    .record-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; padding-right: 10px; }
+    .record-list::-webkit-scrollbar { width: 6px; }
+    .record-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+    .record-card { display: flex; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08); border-radius: 15px; padding: 20px; transition: 0.3s; align-items: center; gap: 25px; }
+    .record-card:hover { transform: translateX(5px); background: rgba(255,255,255,0.08); border-color: rgba(255,102,0,0.3); }
+    .r-cover { width: 80px; height: 110px; border-radius: 8px; object-fit: cover; background: #333; }
+    .r-info { flex: 1; }
+    .r-title { font-size: 20px; color: #fff; font-weight: bold; margin-bottom: 8px; }
+    .r-meta { color: #aaa; font-size: 14px; margin-bottom: 5px; }
+    .r-role { display: inline-block; background: rgba(255,102,0,0.15); color: #ff9900; padding: 5px 12px; border-radius: 6px; font-size: 13px; border: 1px solid rgba(255,102,0,0.3); margin-top: 5px; }
+    .r-status { font-size: 16px; font-weight: bold; color: #28a745; }
+  </style>
+</head>
+<body>
+<div class="sidebar">
+  <div class="sidebar-logo"><h2><span class="star"></span>剧遇</h2></div>
+  <div class="menu-list">
+    <button class="menu-item" onclick="goToProfile()"><span>👤</span><span>个人信息</span></button>
+  </div>
+</div>
+
+<div class="main-content">
+  <div class="header-top">
+    <h1 class="page-title">📦 我的玩本记录</h1>
+    <button class="back-btn" onclick="goToProfile()">← 返回个人中心</button>
+  </div>
+
+  <div class="record-list">
+    <div class="record-card">
+      <div class="r-cover" style="background: url('https://via.placeholder.com/80x110/335/00aaff?text=Cover') center/cover;"></div>
+      <div class="r-info">
+        <div class="r-title">《余温》</div>
+        <div class="r-meta">游玩时间：2023-10-24 19:30 | 房间号：#5521</div>
+        <div class="r-role">扮演角色：顾星河</div>
+      </div>
+      <div class="r-status">已完本</div>
+    </div>
+
+    <div class="record-card">
+      <div class="r-cover" style="background: url('https://via.placeholder.com/80x110/444/ff6600?text=Cover') center/cover;"></div>
+      <div class="r-info">
+        <div class="r-title">《孤岛惊魂》</div>
+        <div class="r-meta">游玩时间：2023-10-15 14:00 | 房间号：#1024</div>
+        <div class="r-role">扮演角色：神秘酒保</div>
+      </div>
+      <div class="r-status">已完本</div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function goToProfile() {
+    const username = localStorage.getItem('loginUsername') || '';
+    window.location.href = `profile.html?username=${encodeURIComponent(username)}`;
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剧遇 - 登录</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: url("images/bg.jpg") no-repeat center center;
+            background-size: cover;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .login-box {
+            width: 550px;
+            background: rgba(15, 25, 50, 0.85);
+            border-radius: 20px;
+            padding: 50px 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .logo {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .logo h1 {
+            color: #fff;
+            font-size: 48px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+        .logo .star {
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #ff6600, #ff3300);
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+        .logo p {
+            color: #fff;
+            font-size: 22px;
+            margin-top: 15px;
+            opacity: 0.8;
+        }
+        .form-item {
+            margin-bottom: 25px;
+            position: relative;
+        }
+        .form-item input {
+            width: 100%;
+            height: 55px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 0 20px 0 55px;
+            color: #fff;
+            font-size: 18px;
+            outline: none;
+            transition: all 0.3s;
+        }
+        .form-item input:focus {
+            border-color: #ff6600;
+            background: rgba(255,255,255,0.15);
+        }
+        .form-item .icon {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #fff;
+            font-size: 22px;
+            opacity: 0.7;
+        }
+        .form-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            color: #fff;
+        }
+        .form-row .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .form-row .checkbox-item input {
+            width: 18px;
+            height: 18px;
+        }
+        .form-row a {
+            color: #ff6600;
+            text-decoration: none;
+        }
+        .login-btn {
+            width: 100%;
+            height: 60px;
+            background: linear-gradient(90deg, #ff9900, #ff3300);
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-bottom: 25px;
+        }
+        .login-btn:hover {
+            opacity: 0.9;
+        }
+        .register-link {
+            text-align: center;
+            color: #fff;
+            font-size: 18px;
+        }
+        .register-link a {
+            color: #ff6600;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+<div class="login-box">
+    <div class="logo">
+        <h1>
+            <span class="star"></span>
+            剧遇
+        </h1>
+        <p>沉浸式剧本社交，遇见同频搭子</p>
+    </div>
+
+    <div class="form-item">
+        <span class="icon">👤</span>
+        <input type="text" id="username" placeholder="用户名">
+    </div>
+
+    <div class="form-item">
+        <span class="icon">📱</span>
+        <input type="text" id="phone" placeholder="手机号">
+    </div>
+
+    <div class="form-item">
+        <span class="icon">🔒</span>
+        <input type="password" id="password" placeholder="密码">
+    </div>
+
+    <div class="form-row">
+        <div class="checkbox-item">
+            <input type="checkbox" id="remember">
+            <label for="remember">记住密码</label>
+        </div>
+        <a href="#">忘记密码</a>
+    </div>
+
+    <button class="login-btn" id="loginBtn">登录</button>
+
+    <div class="register-link">
+        没有账号？ <a href="register.html">立即注册</a>
+    </div>
+</div>
+
+<script>
+    document.getElementById('loginBtn').addEventListener('click', function() {
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+
+        if (!username) { alert('请输入用户名'); return; }
+        if (!password) { alert('请输入密码'); return; }
+
+        fetch('/api/user/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: username, password: password })
+        })
+            .then(res => {
+                console.log('响应状态:', res.status);
+                return res.json();
+            })
+            .then(data => {
+                console.log('登录响应:', data);
+                if (data.code === 200) {
+                    alert('登录成功！即将跳转到个人中心');
+                    localStorage.setItem('loginUsername', username);
+                    window.location.href = `profile.html?username=${encodeURIComponent(username)}`;
+                } else {
+                    alert(data.msg || '登录失败，请重试');
+                }
+            })
+            .catch(err => {
+                console.error('登录请求失败:', err);
+                alert('请求失败，请检查网络');
+            });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剧遇 - 好友私信</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", sans-serif; }
+        body { width: 100vw; height: 100vh; background: url("images/bg.jpg") no-repeat center center; background-size: cover; display: flex; padding: 20px; overflow: hidden; }
+
+        /* ================= 侧边栏 ================= */
+        .sidebar { width: 280px; height: 100%; background: linear-gradient(180deg, rgba(15,26,58,0.9), rgba(26,42,90,0.9)); border-radius: 20px; padding: 40px 20px; display: flex; flex-direction: column; backdrop-filter: blur(10px); z-index: 10;}
+        .sidebar-logo { text-align: center; margin-bottom: 50px; }
+        .sidebar-logo h2 { color: #fff; font-size: 42px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .sidebar-logo .star { width: 25px; height: 35px; background: #ff6600; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+        .menu-list { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        .menu-item { width: 100%; height: 60px; background: transparent; border: none; border-radius: 12px; color: #fff; font-size: 18px; display: flex; align-items: center; padding: 0 20px; gap: 15px; cursor: pointer; transition: 0.3s; opacity: 0.7; }
+        .menu-item:hover { opacity: 1; background: rgba(255,255,255,0.1); }
+        .menu-item.active { background: linear-gradient(90deg, #ff6600, #ff3300); opacity: 1; box-shadow: 0 5px 15px rgba(255, 102, 0, 0.3); }
+
+        /* ================= 主内容区 ================= */
+        .main-content { flex: 1; height: 100%; background: rgba(18, 22, 33, 0.9); backdrop-filter: blur(15px); border-radius: 20px; margin-left: 20px; display: flex; overflow: hidden; border: 1px solid rgba(255,255,255,0.1); }
+
+        /* 左侧：好友列表区 */
+        .chat-sidebar { width: 320px; background: rgba(0,0,0,0.2); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; }
+        .search-area { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .search-box { display: flex; align-items: center; background: rgba(255,255,255,0.05); border-radius: 12px; padding: 10px 15px; border: 1px solid rgba(255,255,255,0.1); }
+        .search-box input { background: none; border: none; color: #fff; padding-left: 10px; outline: none; width: 100%; font-size: 14px; }
+
+        .friend-list { flex: 1; overflow-y: auto; }
+        /* 隐藏滚动条 */
+        .friend-list::-webkit-scrollbar { width: 6px; }
+        .friend-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+        .friend-item { display: flex; align-items: center; padding: 15px 20px; cursor: pointer; transition: 0.3s; border-bottom: 1px solid rgba(255,255,255,0.02); }
+        .friend-item:hover { background: rgba(255,255,255,0.05); }
+        .friend-item.active { background: rgba(255,102,0,0.1); border-left: 4px solid #ff6600; }
+
+        .f-avatar { width: 45px; height: 45px; border-radius: 50%; background: #444; margin-right: 15px; position: relative; object-fit: cover; }
+        .online-dot { position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background: #28a745; border: 2px solid #1a2035; border-radius: 50%; }
+        .f-info { flex: 1; overflow: hidden; }
+        .f-name-time { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+        .f-name { color: #fff; font-size: 16px; font-weight: bold; }
+        .f-time { color: #666; font-size: 12px; }
+        .f-msg { color: #888; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .unread-badge { background: #ff3333; color: #fff; font-size: 12px; padding: 2px 6px; border-radius: 10px; margin-left: 10px; }
+
+        /* 右侧：聊天窗口区 */
+        .chat-window { flex: 1; display: flex; flex-direction: column; background: rgba(0,0,0,0.1); }
+        .chat-header { padding: 20px 30px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .chat-title { color: #fff; font-size: 18px; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .chat-status { font-size: 12px; color: #28a745; font-weight: normal; }
+        .chat-actions button { background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer; margin-left: 15px; transition: 0.3s; }
+        .chat-actions button:hover { color: #ff6600; }
+
+        .chat-messages { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
+        .chat-messages::-webkit-scrollbar { width: 6px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
+
+        .msg-time { text-align: center; color: #666; font-size: 12px; margin: 10px 0; }
+
+        .msg-wrapper { display: flex; max-width: 80%; }
+        .msg-wrapper.received { align-self: flex-start; }
+        .msg-wrapper.sent { align-self: flex-end; flex-direction: row-reverse; }
+
+        .msg-avatar { width: 40px; height: 40px; border-radius: 50%; background: #555; margin: 0 15px; object-fit: cover; }
+        .msg-bubble { padding: 12px 18px; border-radius: 15px; font-size: 15px; line-height: 1.5; word-break: break-all; }
+
+        .received .msg-bubble { background: rgba(255,255,255,0.1); color: #ddd; border-top-left-radius: 2px; }
+        .sent .msg-bubble { background: linear-gradient(135deg, #ff6600, #ff3300); color: #fff; border-top-right-radius: 2px; box-shadow: 0 5px 15px rgba(255,102,0,0.2); }
+
+        /* 聊天输入区 */
+        .chat-input-area { padding: 20px 30px; border-top: 1px solid rgba(255,255,255,0.05); background: rgba(0,0,0,0.2); }
+        .input-toolbar { display: flex; gap: 15px; margin-bottom: 15px; }
+        .input-toolbar button { background: none; border: none; color: #888; font-size: 20px; cursor: pointer; transition: 0.3s; }
+        .input-toolbar button:hover { color: #ff6600; }
+
+        .input-box { display: flex; gap: 15px; align-items: flex-end; }
+        .input-box textarea { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: #fff; padding: 15px; font-size: 15px; outline: none; resize: none; height: 80px; transition: 0.3s; }
+        .input-box textarea:focus { border-color: rgba(255,102,0,0.5); background: rgba(255,255,255,0.08); }
+
+        .send-btn { background: linear-gradient(90deg, #ff6600, #ff3300); color: #fff; border: none; border-radius: 12px; padding: 0 30px; height: 50px; font-size: 16px; font-weight: bold; cursor: pointer; transition: 0.3s; margin-bottom: 15px; }
+        .send-btn:hover { box-shadow: 0 5px 15px rgba(255,102,0,0.4); transform: translateY(-2px); }
+
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-logo"><h2><span class="star"></span>剧遇</h2></div>
+    <div class="menu-list">
+        <button class="menu-item" onclick="goToPage('index.html')"><span>🏠</span><span>首页</span></button>
+        <button class="menu-item" onclick="goToPage('profile.html')"><span>👤</span><span>个人信息</span></button>
+        <button class="menu-item active" onclick="goToPage('chat.html')"><span>💬</span><span>好友私信</span></button>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="chat-sidebar">
+        <div class="search-area">
+            <div class="search-box">
+                <span>🔍</span>
+                <input type="text" placeholder="搜索联系人或群组...">
+            </div>
+        </div>
+        <div class="friend-list">
+            <div class="friend-item active" onclick="switchChat('DM-七七', 'online')">
+                <img src="images/friend1.jpg" class="f-avatar" onerror="this.src='images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp'"><div class="online-dot"></div>
+                <div class="f-info">
+                    <div class="f-name-time"><span class="f-name">DM-七七</span><span class="f-time">14:20</span></div>
+                    <div class="f-msg">周六下午2点的车，还缺个男生，来吗？</div>
+                </div>
+                <div class="unread-badge">1</div>
+            </div>
+
+            <div class="friend-item" onclick="switchChat('神秘剧友_K', 'offline')">
+                <img src="images/friend2.jpg" class="f-avatar" onerror="this.src='images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp'">
+                <div class="f-info">
+                    <div class="f-name-time"><span class="f-name">神秘剧友_K</span><span class="f-time">昨天</span></div>
+                    <div class="f-msg">上次那个情感本真的绝了。</div>
+                </div>
+            </div>
+
+            <div class="friend-item" onclick="switchChat('推理狂人', 'online')">
+                <img src="images/friend3.jpg" class="f-avatar" onerror="this.src='images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp'"><div class="online-dot"></div>
+                <div class="f-info">
+                    <div class="f-name-time"><span class="f-name">推理狂人</span><span class="f-time">星期二</span></div>
+                    <div class="f-msg">我破解了凶手的诡计！</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="chat-window">
+        <div class="chat-header">
+            <div class="chat-title" id="chatTitle">
+                DM-七七 <span class="chat-status" id="chatStatus">● 在线</span>
+            </div>
+            <div class="chat-actions">
+                <button title="发起语音">📞</button>
+                <button title="好友设置">⚙️</button>
+            </div>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="msg-time">昨天 18:30</div>
+
+            <div class="msg-wrapper received">
+                <img src="images/friend1.jpg" class="msg-avatar" onerror="this.src='images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp'">
+                <div class="msg-bubble">哈喽！最近有个硬核本非常适合你，要不要上车？</div>
+            </div>
+
+            <div class="msg-wrapper sent">
+                <img src="images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp" class="msg-avatar">
+                <div class="msg-bubble">什么本？难度怎么样？</div>
+            </div>
+
+            <div class="msg-time">今天 14:20</div>
+
+            <div class="msg-wrapper received">
+                <img src="images/friend1.jpg" class="msg-avatar" onerror="this.src='images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp'">
+                <div class="msg-bubble">《孤岛惊魂》，难度5颗星！周六下午2点的车，还缺个男生，来吗？</div>
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <div class="input-toolbar">
+                <button title="表情">😀</button>
+                <button title="发送图片">🖼️</button>
+                <button title="发送剧本名片">📚</button>
+            </div>
+            <div class="input-box">
+                <textarea id="messageInput" placeholder="输入你想说的话... (按 Enter 发送)"></textarea>
+                <button class="send-btn" onclick="sendMessage()">发送</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function goToPage(url) {
+        const username = localStorage.getItem('loginUsername') || '';
+        window.location.href = `${url}?username=${encodeURIComponent(username)}`;
+    }
+
+    // 切换聊天好友的模拟交互
+    function switchChat(name, status) {
+        // 更新左侧高亮状态
+        const items = document.querySelectorAll('.friend-item');
+        items.forEach(item => {
+            item.classList.remove('active');
+            // 清除红点（简单模拟已读）
+            if(item.querySelector('.f-name').innerText === name) {
+                item.classList.add('active');
+                const badge = item.querySelector('.unread-badge');
+                if(badge) badge.style.display = 'none';
+            }
+        });
+
+        // 更新右侧头部
+        document.getElementById('chatTitle').innerHTML = `${name} <span class="chat-status" style="color:${status==='online'?'#28a745':'#888'}">● ${status==='online'?'在线':'离线'}</span>`;
+
+        // 清空右侧消息并添加占位消息（加入了容错头像处理）
+        const chatBox = document.getElementById('chatMessages');
+        chatBox.innerHTML = `
+            <div class="msg-time">刚刚</div>
+            <div class="msg-wrapper received">
+                <img src="images/friend_default.jpg" class="msg-avatar" onerror="this.src='images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp'">
+                <div class="msg-bubble">这是与 ${name} 的聊天记录...</div>
+            </div>
+        `;
+    }
+
+    // 发送消息
+    function sendMessage() {
+        const input = document.getElementById('messageInput');
+        const text = input.value.trim();
+        if(!text) return;
+
+        const chatBox = document.getElementById('chatMessages');
+
+        // 添加我发送的消息（使用你已经上传好的头像）
+        const myMsgHtml = `
+            <div class="msg-wrapper sent" style="opacity: 0; animation: fadeIn 0.3s forwards;">
+                <img src="images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp" class="msg-avatar">
+                <div class="msg-bubble">${text}</div>
+            </div>
+        `;
+        chatBox.insertAdjacentHTML('beforeend', myMsgHtml);
+
+        // 清空输入框并滚动到底部
+        input.value = '';
+        chatBox.scrollTop = chatBox.scrollHeight;
+
+        // 简单的自动回复模拟
+        setTimeout(() => {
+            const replyHtml = `
+                <div class="msg-wrapper received" style="opacity: 0; animation: fadeIn 0.3s forwards;">
+                    <img src="images/friend1.jpg" class="msg-avatar" onerror="this.src='images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp'">
+                    <div class="msg-bubble">收到！(此为系统自动回复模拟)</div>
+                </div>
+            `;
+            chatBox.insertAdjacentHTML('beforeend', replyHtml);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }, 1000);
+    }
+
+    // 监听回车键发送消息
+    document.getElementById('messageInput').addEventListener('keypress', function(e) {
+        if(e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault(); // 阻止默认换行
+            sendMessage();
+        }
+    });
+
+    // 注入简单的淡入动画
+    const style = document.createElement('style');
+    style.innerHTML = `@keyframes fadeIn { to { opacity: 1; } }`;
+    document.head.appendChild(style);
+</script>
+</body>
+</html>

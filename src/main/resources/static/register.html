@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剧遇 - 注册</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", sans-serif; }
+        body {
+            width: 100vw; height: 100vh;
+            background: url("images/bg.jpg") no-repeat center center;
+            background-size: cover;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .register-box {
+            width: 800px;
+            background: rgba(15, 25, 50, 0.85);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo h1 {
+            color: #fff; font-size: 48px;
+            display: flex; align-items: center; justify-content: center; gap: 15px;
+        }
+        .logo .star {
+            width: 50px; height: 50px; background: #ff6600;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+        .logo p { color: #fff; font-size: 20px; margin-top: 10px; opacity: 0.8; }
+        .form-row { display: flex; gap: 20px; margin-bottom: 20px; }
+        .form-item { flex: 1; position: relative; }
+        .form-item input {
+            width: 100%; height: 50px;
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 10px;
+            padding: 0 20px 0 50px;
+            color: #fff; font-size: 16px; outline: none;
+            transition: all 0.3s;
+        }
+        .form-item input:focus { border-color: #ff6600; background: rgba(255,255,255,0.15); }
+        .form-item .icon {
+            position: absolute; left: 15px; top: 50%;
+            transform: translateY(-50%); color: #fff;
+            font-size: 20px; opacity: 0.7;
+        }
+        .form-item .get-code {
+            position: absolute; right: 10px; top: 50%;
+            transform: translateY(-50%);
+            background: #ff6600; border: none; color: #fff;
+            padding: 8px 15px; border-radius: 8px;
+            cursor: pointer; font-size: 14px;
+        }
+        .form-item .get-code:disabled { background: #666; cursor: not-allowed; }
+        .checkbox-item { display: flex; align-items: center; gap: 10px; margin: 20px 0; color: #fff; }
+        .checkbox-item input { width: 18px; height: 18px; }
+        .checkbox-item a { color: #ff6600; text-decoration: none; }
+        .register-btn {
+            width: 100%; height: 55px;
+            background: linear-gradient(90deg, #ff6600, #ff3300);
+            border: none; border-radius: 10px;
+            color: #fff; font-size: 20px; font-weight: bold;
+            cursor: pointer; transition: all 0.3s;
+        }
+        .register-btn:hover { opacity: 0.9; }
+        .login-link { text-align: center; margin-top: 20px; color: #fff; font-size: 16px; }
+        .login-link a { color: #ff6600; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+<div class="register-box">
+    <div class="logo">
+        <h1><span class="star"></span>剧遇</h1>
+        <p>沉浸式剧本社交，遇见同频搭子</p>
+    </div>
+
+    <div class="form-row">
+        <div class="form-item">
+            <span class="icon">👤</span>
+            <input type="text" id="username" placeholder="请设置4-20位用户名">
+        </div>
+        <div class="form-item">
+            <span class="icon">✉️</span>
+            <input type="text" id="code" placeholder="6位验证码">
+            <button class="get-code" id="getCodeBtn">获取验证码</button>
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-item">
+            <span class="icon">📱</span>
+            <input type="text" id="phone" placeholder="请输入11位手机号码">
+        </div>
+        <div class="form-item">
+            <span class="icon">🔒</span>
+            <input type="password" id="password" placeholder="请设置6-20位密码，含字母+数字">
+        </div>
+    </div>
+
+    <div class="form-row">
+        <div class="form-item">
+            <span class="icon">🔒</span>
+            <input type="password" id="confirmPwd" placeholder="请再次确认密码">
+        </div>
+    </div>
+
+    <div class="checkbox-item">
+        <input type="checkbox" id="agree">
+        <label for="agree">我已阅读并同意 <a href="#">《用户协议》</a> 和 <a href="#">《隐私政策》</a></label>
+    </div>
+
+    <button class="register-btn" id="registerBtn">立即注册</button>
+
+    <div class="login-link">
+        已有账号？ <a href="login.html">去登录</a>
+    </div>
+</div>
+
+<script>
+    // 1. 获取验证码逻辑
+    document.getElementById('getCodeBtn').addEventListener('click', function() {
+        const phone = document.getElementById('phone').value.trim();
+        const getCodeBtn = document.getElementById('getCodeBtn');
+
+        if (!phone || !phone.match(/^1[3-9]\d{9}$/)) {
+            alert('请先输入正确的11位手机号');
+            return;
+        }
+
+        // 调用接口
+        fetch('/captcha/getCode', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: `phone=${encodeURIComponent(phone)}`
+        })
+            .then(res => {
+                if (!res.ok) throw new Error('获取验证码失败');
+                return res.json();
+            })
+            .then(data => {
+                console.log('获取验证码响应:', data);
+                if (data.code === 200) {
+                    // ================= 核心改动：弹窗显示验证码 =================
+                    const captchaCode = data.data;
+                    alert(`【剧遇】\n您的注册验证码是：\n\n👉 ${captchaCode} 👈\n\n请在5分钟内使用。`);
+
+                    // 开启倒计时
+                    let countDown = 60;
+                    getCodeBtn.disabled = true;
+                    const timer = setInterval(() => {
+                        countDown--;
+                        getCodeBtn.innerText = `${countDown}秒后重发`;
+                        if (countDown <= 0) {
+                            clearInterval(timer);
+                            getCodeBtn.innerText = '获取验证码';
+                            getCodeBtn.disabled = false;
+                        }
+                    }, 1000);
+                } else {
+                    alert(data.msg || '获取验证码失败');
+                }
+            })
+            .catch(err => {
+                console.error('获取验证码失败:', err);
+                alert('请求失败，请检查网络');
+            });
+    });
+
+    // 2. 注册逻辑
+    document.getElementById('registerBtn').addEventListener('click', function() {
+        const username = document.getElementById('username').value.trim();
+        const phone = document.getElementById('phone').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const confirmPwd = document.getElementById('confirmPwd').value.trim();
+        const code = document.getElementById('code').value.trim();
+        const agree = document.getElementById('agree').checked;
+
+        if (!username) { alert('请输入用户名'); return; }
+        if (!phone) { alert('请输入手机号'); return; }
+        if (!code) { alert('请输入验证码'); return; }
+        if (!password) { alert('请输入密码'); return; }
+        if (password !== confirmPwd) { alert('两次密码不一致'); return; }
+        if (!agree) { alert('请同意协议'); return; }
+
+        fetch('/api/user/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                username: username,
+                password: password,
+                confirmPassword: confirmPwd,
+                phone: phone,
+                code: code
+            })
+        })
+            .then(res => {
+                if (!res.ok) throw new Error('注册失败');
+                return res.json();
+            })
+            .then(data => {
+                console.log('注册响应:', data);
+                if (data.code === 200) {
+                    alert('注册成功！');
+                    window.location.href = 'login.html';
+                } else {
+                    alert(data.msg || '注册失败');
+                }
+            })
+            .catch(err => {
+                console.error('注册失败:', err);
+                alert('请求失败，请检查网络');
+            });
+    });
+</script>
+</body>
+</html>

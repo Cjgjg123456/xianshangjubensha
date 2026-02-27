@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="org.example.jubensha.mapper.UserMapper">
+
+    <resultMap id="BaseResultMap" type="org.example.jubensha.entity.User">
+        <id property="userId" column="user_id" jdbcType="BIGINT"/>
+        <result property="username" column="username" jdbcType="VARCHAR"/>
+        <result property="password" column="password" jdbcType="VARCHAR"/>
+        <result property="phone" column="phone" jdbcType="VARCHAR"/>
+        <result property="gender" column="gender" jdbcType="TINYINT"/>
+        <result property="hobbyType" column="hobby_type" jdbcType="VARCHAR"/>
+        <result property="userLevel" column="user_level" jdbcType="INTEGER"/>
+        <result property="uid" column="uid" jdbcType="VARCHAR"/>
+        <result property="createTime" column="create_time" jdbcType="TIMESTAMP"/>
+        <result property="updateTime" column="update_time" jdbcType="TIMESTAMP"/>
+        <result property="isDeleted" column="is_deleted" jdbcType="TINYINT"/>
+        <result property="profile" column="profile" jdbcType="VARCHAR"/>
+        <result property="nickname" column="nickname" jdbcType="VARCHAR"/>
+        <result property="realName" column="real_name" jdbcType="VARCHAR"/>
+        <result property="birthday" column="birthday" jdbcType="DATE"/>
+        <result property="city" column="city" jdbcType="VARCHAR"/>
+        <result property="avatarUrl" column="avatar_url" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        user_id, username, password, phone, gender, hobby_type, user_level, uid, create_time, update_time, is_deleted, profile, nickname, real_name, birthday, city, avatar_url
+    </sql>
+
+    <select id="selectByUsername" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_user
+        WHERE username = #{username} AND is_deleted = 0
+    </select>
+
+    <select id="selectByPhone" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM sys_user
+        WHERE phone = #{phone} AND is_deleted = 0
+    </select>
+
+    <insert id="insertUser" useGeneratedKeys="true" keyProperty="userId">
+        INSERT INTO sys_user (username, password, phone, nickname, uid, create_time, update_time, is_deleted)
+        VALUES (#{username}, #{password}, #{phone}, #{nickname}, #{uid}, NOW(), NOW(), 0)
+    </insert>
+
+    <update id="updateUserProfile">
+        UPDATE sys_user
+        <set>
+            <if test="nickname != null">nickname = #{nickname},</if>
+            <if test="realName != null">real_name = #{realName},</if>
+            <if test="gender != null">gender = #{gender},</if>
+            <if test="hobbyType != null">hobby_type = #{hobbyType},</if>
+            <if test="birthday != null">birthday = #{birthday},</if>
+            <if test="city != null">city = #{city},</if>
+            <if test="profile != null">profile = #{profile},</if>
+            <if test="userLevel != null">user_level = #{userLevel},</if>
+            <if test="avatarUrl != null">avatar_url = #{avatarUrl},</if>
+            update_time = NOW()
+        </set>
+        WHERE username = #{username} AND is_deleted = 0
+    </update>
+</mapper>

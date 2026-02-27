@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剧遇 - 个人中心</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Microsoft Yahei", sans-serif;
+        }
+        body {
+            width: 100vw;
+            height: 100vh;
+            background: url("images/bg.jpg") no-repeat center center;
+            background-size: cover;
+            display: flex;
+            padding: 20px;
+            overflow: hidden;
+        }
+        /* 侧边栏 */
+        .sidebar {
+            width: 280px;
+            height: 100%;
+            background: linear-gradient(180deg, #0f1a3a, #1a2a5a);
+            border-radius: 20px;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .sidebar::before,
+        .sidebar::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.2);
+        }
+        .sidebar::before {
+            top: 15px;
+            left: 15px;
+            border-right: none;
+            border-bottom: none;
+            border-radius: 5px 0 0 0;
+        }
+        .sidebar::after {
+            bottom: 15px;
+            left: 15px;
+            border-right: none;
+            border-top: none;
+            border-radius: 0 0 0 5px;
+        }
+        .sidebar-logo {
+            text-align: center;
+            margin-bottom: 50px;
+        }
+        .sidebar-logo h2 {
+            color: #fff;
+            font-size: 42px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .sidebar-logo .star {
+            width: 35px;
+            height: 35px;
+            background: #ff6600;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+        }
+        .sidebar-logo .divider {
+            width: 80px;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #fff, transparent);
+            margin: 15px auto 0;
+        }
+        .menu-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        .menu-item {
+            width: 100%;
+            height: 60px;
+            background: transparent;
+            border: none;
+            border-radius: 12px;
+            color: #fff;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            padding: 0 20px;
+            gap: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            opacity: 0.7;
+        }
+        .menu-item.active {
+            background: linear-gradient(90deg, #ff6600, #ff3300);
+            opacity: 1;
+            box-shadow: 0 5px 15px rgba(255, 102, 0, 0.3);
+        }
+        .menu-item:hover {
+            opacity: 1;
+            background: rgba(255,255,255,0.1);
+        }
+        .logout-btn {
+            width: 100%;
+            height: 50px;
+            background: transparent;
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+        .logout-btn:hover {
+            border-color: #ff3300;
+            color: #ff3300;
+        }
+        /* 主内容区 */
+        .main-content {
+            flex: 1;
+            height: 100%;
+            background: rgba(255,255,255,0.95);
+            border-radius: 20px;
+            margin-left: 20px;
+            padding: 40px;
+            overflow-y: auto;
+        }
+        .page-header {
+            border-bottom: 2px solid #eee;
+            padding-bottom: 20px;
+            margin-bottom: 40px;
+        }
+        .page-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #222;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        /* 用户信息卡片 */
+        .user-card {
+            width: 100%;
+            background: linear-gradient(90deg, #1a2a5a, #0f1a3a);
+            border-radius: 20px;
+            padding: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            color: #fff;
+        }
+        .user-info-left {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .user-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff9900, #ff3300);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 36px;
+            font-weight: bold;
+            color: #fff;
+        }
+        .user-base h3 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .user-base .meta {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+        .user-base .meta span {
+            opacity: 0.8;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .user-base .meta .gender-dot {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .edit-btn {
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 10px;
+            color: #fff;
+            padding: 10px 25px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        .edit-btn:hover {
+            background: #ff6600;
+            border-color: #ff6600;
+        }
+        .user-info-right {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 30px;
+        }
+        .info-item {
+            text-align: center;
+        }
+        .info-item .label {
+            font-size: 14px;
+            opacity: 0.7;
+            margin-bottom: 8px;
+        }
+        .info-item .value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .info-item .hobby-tag {
+            background: rgba(255,255,255,0.2);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        .level-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .level-progress {
+            width: 200px;
+            height: 8px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            margin-top: 10px;
+            overflow: hidden;
+        }
+        .level-progress .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #ff9900, #ff3300);
+            width: 60%;
+            border-radius: 4px;
+        }
+        .level-text {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 5px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+        /* 功能卡片区 */
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 20px;
+        }
+        .func-card {
+            background: #fff;
+            border-radius: 20px;
+            padding: 30px 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        .func-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 5px;
+            background: linear-gradient(90deg, transparent, currentColor, transparent);
+            opacity: 0;
+            transition: all 0.3s;
+        }
+        .func-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .func-card:hover::before {
+            opacity: 1;
+        }
+        .func-card .icon-wrapper {
+            width: 70px;
+            height: 80px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+        .func-card .icon-bg {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 30px;
+            border-radius: 0 0 30px 30px;
+            opacity: 0.3;
+        }
+        .func-card .icon {
+            width: 60px;
+            height: 60px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+        .func-card h4 {
+            font-size: 20px;
+            color: #222;
+            margin-bottom: 10px;
+        }
+        .func-card .record-count {
+            font-size: 14px;
+            color: #999;
+            background: #f5f5f5;
+            padding: 5px 15px;
+            border-radius: 15px;
+            display: inline-block;
+        }
+        /* 卡片颜色主题 */
+        .card-1 { color: #3388ff; }
+        .card-1 .icon { background: #e8f4ff; }
+        .card-1 .icon-bg { background: #3388ff; }
+
+        .card-2 { color: #33cc99; }
+        .card-2 .icon { background: #e8fff4; }
+        .card-2 .icon-bg { background: #33cc99; }
+
+        .card-3 { color: #ff6666; }
+        .card-3 .icon { background: #ffe8e8; }
+        .card-3 .icon-bg { background: #ff6666; }
+
+        .card-4 { color: #3366cc; }
+        .card-4 .icon { background: #e8f0ff; }
+        .card-4 .icon-bg { background: #3366cc; }
+
+        .card-5 { color: #ffaa33; }
+        .card-5 .icon { background: #fff8e8; }
+        .card-5 .icon-bg { background: #ffaa33; }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-logo">
+        <h2>
+            <span class="star"></span>
+            剧遇
+        </h2>
+        <div class="divider"></div>
+    </div>
+    <div class="menu-list">
+        <button class="menu-item" onclick="goToPage('index.html')">
+            <span>🏠</span>
+            <span>首页</span>
+        </button>
+        <button class="menu-item active" onclick="goToPage('profile.html')">
+            <span>👤</span>
+            <span>个人信息</span>
+        </button>
+        <button class="menu-item" onclick="goToPage('chat.html')">
+            <span>💬</span>
+            <span>好友私信</span>
+        </button>
+    </div>
+    <button class="logout-btn" id="logoutBtn">退出登录</button>
+</div>
+
+<div class="main-content">
+    <div class="page-header">
+        <h1 class="page-title">个人中心 <span style="font-size:18px;color:#999;font-weight:normal;">管理你的个人信息与专属内容</span></h1>
+    </div>
+
+    <div class="user-card">
+        <div class="user-info-left">
+            <div class="user-avatar" id="userAvatar">剧</div>
+            <div class="user-base">
+                <h3 id="userName">个人名名</h3>
+                <div class="meta">
+                    <span class="gender-dot" id="genderDot">⚪</span>
+                    <span id="userGender">性别</span>
+                    <span>·</span>
+                    <span id="userHobby">爱好类型</span>
+                </div>
+            </div>
+            <button class="edit-btn" id="editProfileBtn">编辑资料</button>
+        </div>
+        <div class="user-info-right">
+            <div class="info-item">
+                <div class="label">姓名</div>
+                <div class="value" id="userRealName">姓胜名</div>
+            </div>
+            <div class="info-item">
+                <div class="label">爱好类型</div>
+                <div class="hobby-tag" id="userHobbyTag">未设置</div>
+            </div>
+            <div class="info-item level-container">
+                <div class="label">等级</div>
+                <div class="value">超级等级 <span style="font-size:14px;">⚡</span></div>
+                <div class="level-progress">
+                    <div class="progress-bar"></div>
+                </div>
+                <div class="level-text">
+                    <span id="levelText">进进</span>
+                    <span>9 备</span>
+                </div>
+            </div>
+            <div class="info-item">
+                <div class="label">用户等级</div>
+                <div class="value">UID</div>
+                <div style="font-size:14px;opacity:0.7;margin-top:5px;" id="userUid">------</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-grid">
+        <div class="func-card card-1" onclick="goToPage('play-record.html')">
+            <div class="icon-wrapper">
+                <div class="icon-bg"></div>
+                <div class="icon">📦</div>
+            </div>
+            <h4>我的玩本记录</h4>
+            <span class="record-count" id="playRecordCount">0 条</span>
+        </div>
+        <div class="func-card card-2" onclick="goToPage('follow-history.html')">
+            <div class="icon-wrapper">
+                <div class="icon-bg"></div>
+                <div class="icon">📍</div>
+            </div>
+            <h4>历史关注</h4>
+            <span class="record-count" id="followCount">0 条</span>
+        </div>
+        <div class="func-card card-3" onclick="goToPage('history-record.html')">
+            <div class="icon-wrapper">
+                <div class="icon-bg"></div>
+                <div class="icon">🔖</div>
+            </div>
+            <h4>浏览记录</h4>
+            <span class="record-count" id="historyCount">0 条</span>
+        </div>
+        <div class="func-card card-4" onclick="goToPage('comment-record.html')">
+            <div class="icon-wrapper">
+                <div class="icon-bg"></div>
+                <div class="icon">🛡️</div>
+            </div>
+            <h4>评价记录</h4>
+            <span class="record-count" id="commentCount">0 条</span>
+        </div>
+        <div class="func-card card-5" onclick="goToPage('my-creation.html')">
+            <div class="icon-wrapper">
+                <div class="icon-bg"></div>
+                <div class="icon">📚</div>
+            </div>
+            <h4>我的创作</h4>
+            <span class="record-count" id="creationCount">0 条</span>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 全局页面跳转方法
+    function goToPage(pageUrl) {
+        const username = localStorage.getItem('loginUsername') || 'zhangsan';
+        window.location.href = `${pageUrl}?username=${username}`;
+    }
+
+    // 页面加载获取数据
+    window.onload = function() {
+        loadUserProfile();
+        loadUserStatistics();
+    };
+
+    // 【修正核心】加载用户基础信息，适配后端接口
+    function loadUserProfile() {
+        // 优先从URL获取用户名，其次从本地存储
+        const urlParams = new URLSearchParams(window.location.search);
+        const username = urlParams.get('username') || localStorage.getItem('loginUsername');
+
+        // 无用户名跳转到登录页
+        if (!username) {
+            alert('请先登录');
+            window.location.href = 'login.html';
+            return;
+        }
+
+        // 修正请求路径，和后端匹配
+        fetch(`/api/user/profile?username=${encodeURIComponent(username)}`)
+            .then(res => {
+                if (!res.ok) throw new Error(`接口状态码：${res.status}`);
+                return res.json();
+            })
+            .then(result => {
+                console.log('获取用户信息响应:', result);
+                // 适配统一的Result返回格式
+                if (result.code === 200) {
+                    const user = result.data;
+                    // 填充用户信息
+                    document.getElementById('userName').innerText = user.nickname || user.username || '个人名名';
+                    document.getElementById('userRealName').innerText = user.realName || user.username || '姓胜名';
+                    document.getElementById('userUid').innerText = user.uid || '------';
+
+                    // 显示用户头像
+                    const userAvatar = document.getElementById('userAvatar');
+                    if (user.avatarUrl) {
+                        userAvatar.innerHTML = `<img src="${user.avatarUrl}" style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;">`;
+                    } else {
+                        userAvatar.innerText = (user.nickname || user.username || '剧').charAt(0);
+                    }
+
+                    // 性别处理（适配tinyint类型：0=女，1=男）
+                    const genderMap = { 0: '女', 1: '男', undefined: '未知' };
+                    const genderDotMap = { 0: '♀', 1: '♂', undefined: '⚪' };
+                    document.getElementById('userGender').innerText = genderMap[user.gender] || '性别';
+                    document.getElementById('genderDot').innerText = genderDotMap[user.gender] || '⚪';
+
+                    // 爱好类型
+                    const hobby = user.hobbyType || '未设置';
+                    document.getElementById('userHobby').innerText = hobby;
+                    document.getElementById('userHobbyTag').innerText = hobby;
+
+                    // 等级处理
+                    const userLevel = user.userLevel || 1;
+                    document.getElementById('levelText').innerText = `Lv.${userLevel}`;
+                    const progressPercent = userLevel * 20 > 100 ? 100 : userLevel * 20;
+                    document.querySelector('.progress-bar').style.width = `${progressPercent}%`;
+
+                    // 存储登录信息
+                    localStorage.setItem('userId', user.userId);
+                    localStorage.setItem('loginUsername', username);
+                } else {
+                    throw new Error(result.msg || '获取用户信息失败');
+                }
+            })
+            .catch(err => {
+                console.error('获取用户信息失败:', err);
+                // 弹出具体错误信息，方便排查
+                alert(`获取个人信息失败：${err.message}，请刷新重试`);
+            });
+    }
+
+    // 加载统计数据
+    function loadUserStatistics() {
+        const username = new URLSearchParams(window.location.search).get('username') || localStorage.getItem('loginUsername');
+        if (!username) return;
+
+        fetch(`/api/user/statistics?username=${encodeURIComponent(username)}`)
+            .then(res => res.json())
+            .then(result => {
+                console.log('获取统计数据响应:', result);
+                if (result.code === 200) {
+                    const stat = result.data;
+                    document.getElementById('playRecordCount').innerText = `${stat.playRecordCount || 0} 条`;
+                    document.getElementById('followCount').innerText = `${stat.followCount || 0} 条`;
+                    document.getElementById('historyCount').innerText = `${stat.historyCount || 0} 条`;
+                    document.getElementById('commentCount').innerText = `${stat.commentCount || 0} 条`;
+                    document.getElementById('creationCount').innerText = `${stat.creationCount || 0} 条`;
+                }
+            })
+            .catch(err => console.error('获取统计数据失败:', err));
+    }
+
+    // 编辑资料跳转
+    document.getElementById('editProfileBtn').addEventListener('click', function() {
+        goToPage('edit-profile.html');
+    });
+
+    // 退出登录
+    document.getElementById('logoutBtn').addEventListener('click', function() {
+        if (confirm('确定要退出登录吗？')) {
+            fetch('/api/user/logout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' }
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.code === 200) {
+                        alert('退出成功');
+                        localStorage.removeItem('loginUsername');
+                        localStorage.removeItem('userId');
+                        window.location.href = 'login.html';
+                    } else {
+                        alert(data.msg);
+                    }
+                })
+                .catch(err => {
+                    console.error('退出登录失败:', err);
+                    alert('退出失败，请重试');
+                });
+        }
+    });
+</script>
+</body>
+</html>

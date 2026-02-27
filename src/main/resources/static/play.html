@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剧遇 - 阅读剧本</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", sans-serif; }
+        body { width: 100vw; height: 100vh; background: url("images/bg.jpg") no-repeat center center; background-size: cover; display: flex; padding: 15px; color: #fff; overflow: hidden; }
+
+        .container { display: flex; gap: 15px; width: 100%; height: 100%; background: rgba(10, 15, 25, 0.9); backdrop-filter: blur(20px); border-radius: 15px; padding: 15px; border: 1px solid rgba(255,255,255,0.1); }
+
+        /* 左侧：角色信息栏 */
+        .role-sidebar { width: 260px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 20px; align-items: center; }
+        .game-status { width: 100%; text-align: center; background: rgba(255,102,0,0.1); border: 1px solid #ff6600; color: #ff9900; padding: 8px; border-radius: 8px; font-weight: bold; margin-bottom: 25px; letter-spacing: 1px; }
+        .role-avatar { width: 120px; height: 120px; border-radius: 50%; border: 3px solid #b89758; margin-bottom: 15px; object-fit: cover; box-shadow: 0 0 20px rgba(184, 151, 88, 0.3); }
+        .role-name { font-size: 24px; font-weight: bold; color: #fff; margin-bottom: 5px; text-shadow: 0 2px 4px rgba(0,0,0,0.5); }
+        .player-name { font-size: 14px; color: #aaa; margin-bottom: 20px; }
+
+        .clue-btn { width: 100%; padding: 12px; margin-bottom: 15px; background: linear-gradient(90deg, #00b4db, #0083b0); color: #fff; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; transition: 0.3s; box-shadow: 0 4px 10px rgba(0,180,219,0.3); }
+        .clue-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,180,219,0.5); }
+
+        .role-intro { flex: 1; width: 100%; background: rgba(255,255,255,0.03); border-radius: 8px; padding: 15px; font-size: 13px; color: #ccc; line-height: 1.6; overflow-y: auto; }
+        .role-intro h4 { color: #b89758; margin-bottom: 8px; font-size: 15px; border-bottom: 1px solid rgba(184, 151, 88, 0.3); padding-bottom: 5px; }
+
+        /* 中间：剧本阅读区 */
+        .script-main { flex: 1; display: flex; flex-direction: column; background: rgba(0,0,0,0.2); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); position: relative; }
+        .script-header { padding: 15px 30px; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center; }
+        .script-title { font-size: 20px; font-weight: bold; color: #ddd; }
+        .chapter-name { font-size: 16px; color: #ff9900; }
+        .script-content-area { flex: 1; padding: 40px 60px; overflow-y: auto; }
+        .script-paper { max-width: 800px; margin: 0 auto; background: rgba(20, 22, 28, 0.95); border: 1px solid #333; border-radius: 10px; padding: 50px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .script-text { font-size: 16px; line-height: 2; color: #e0e0e0; text-align: justify; letter-spacing: 0.5px; }
+        .script-text p { margin-bottom: 20px; text-indent: 2em; }
+        .action-footer { padding: 20px; border-top: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: center; gap: 20px; background: rgba(0,0,0,0.3); border-radius: 0 0 12px 12px; }
+        .btn-ready { padding: 12px 40px; font-size: 16px; font-weight: bold; border-radius: 8px; border: none; background: linear-gradient(90deg, #ff6600, #ff3300); color: #fff; cursor: pointer; transition: 0.3s; }
+        .btn-ready:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,102,0,0.4); }
+
+        /* 右侧：聊天频道 */
+        .chat-sidebar { width: 320px; background: rgba(0,0,0,0.3); border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; }
+        .chat-header { padding: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 16px; font-weight: bold; text-align: center; }
+        .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .msg-sys { text-align: center; color: #888; font-size: 12px; margin: 5px 0;}
+        .msg-item { display: flex; flex-direction: column; animation: fadeIn 0.3s forwards; }
+        .msg-name { font-size: 12px; color: #aaa; margin-bottom: 3px; }
+        .msg-bubble { background: rgba(255,255,255,0.08); padding: 10px 12px; border-radius: 8px; width: fit-content; max-width: 90%; font-size: 13px; line-height: 1.5; border: 1px solid rgba(255,255,255,0.05); }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
+        .chat-input { padding: 15px; display: flex; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .chat-input input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px; border-radius: 6px; outline: none; font-size: 13px; }
+        .chat-input button { background: #ff6600; color: #fff; border: none; padding: 0 15px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+
+        /* ================== 线索卡弹窗样式 ================== */
+        .clue-modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px); display: none; justify-content: center; align-items: center; z-index: 200; }
+        .clue-modal-content { background: rgba(20, 25, 40, 0.95); width: 850px; max-height: 80vh; border-radius: 15px; padding: 30px; border: 1px solid #00e5ff; display: flex; flex-direction: column; box-shadow: 0 0 30px rgba(0,229,255,0.2); }
+        .clue-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 15px; margin-bottom: 20px; }
+        .clue-title { font-size: 22px; font-weight: bold; color: #00e5ff; display: flex; align-items: center; gap: 10px; }
+        .close-clue-btn { background: none; border: none; color: #aaa; font-size: 30px; cursor: pointer; transition: 0.3s; }
+        .close-clue-btn:hover { color: #fff; }
+        .clue-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 20px; overflow-y: auto; padding-right: 5px; }
+        .clue-card { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; padding: 15px; transition: 0.3s; display: flex; flex-direction: column; gap: 8px; }
+        .clue-card:hover { background: rgba(0,229,255,0.05); border-color: #00e5ff; transform: translateY(-3px); }
+        .clue-name { font-size: 16px; font-weight: bold; color: #fff; display: flex; justify-content: space-between; align-items: center; }
+        .clue-tag { font-size: 11px; padding: 2px 6px; border-radius: 4px; display: inline-block; white-space: nowrap; }
+        .clue-tag.public { border: 1px solid #28a745; color: #28a745; background: rgba(40,167,69,0.1); }
+        .clue-tag.private { border: 1px solid #dc3545; color: #dc3545; background: rgba(220,53,69,0.1); }
+        .clue-loc { font-size: 12px; color: #aaa; }
+        .clue-desc { font-size: 13px; color: #ddd; line-height: 1.6; margin-top: 5px; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 6px; flex: 1; }
+
+        /* ================== 幕次选择器样式 ================== */
+        .act-selector {
+            background: rgba(0, 0, 0, 0.5);
+            color: #ff9900;
+            border: 1px solid rgba(255, 153, 0, 0.5);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 15px;
+            font-weight: bold;
+            outline: none;
+            cursor: pointer;
+            transition: 0.3s;
+            appearance: none;
+        }
+        .act-selector:hover { border-color: #ff9900; box-shadow: 0 0 10px rgba(255, 153, 0, 0.2); }
+        .act-selector option { background: #1a1e29; color: #fff; }
+        .act-selector option:disabled { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="role-sidebar">
+        <div class="game-status">✦ 阶段：阅读剧本 ✦</div>
+        <img id="roleAvatar" src="https://via.placeholder.com/120/b89758/fff?text=Role" class="role-avatar">
+        <div class="role-name" id="roleName">加载中...</div>
+        <div class="player-name">玩家：<span id="playerName">---</span></div>
+
+        <button class="clue-btn" onclick="openClueModal()">🔍 查看本幕线索卡</button>
+
+        <div class="role-intro">
+            <h4>公开情报 / 人设</h4>
+            <p id="roleDesc">获取角色数据中...</p>
+        </div>
+    </div>
+
+    <div class="script-main">
+        <div class="script-header">
+            <div class="script-title" id="displayScriptName">《---》</div>
+            <select class="act-selector" id="actSelector" onchange="loadSpecificAct(this.value)">
+                <option value="">加载幕次中...</option>
+            </select>
+        </div>
+
+        <div class="script-content-area">
+            <div class="script-paper">
+                <div class="script-text" id="scriptText">
+                    <p style="text-align: center;">正在生成您的专属剧本视角，请稍候...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="action-footer">
+            <button class="btn-ready" id="readyBtn" onclick="finishReading()">我已阅读完毕</button>
+        </div>
+    </div>
+
+    <div class="chat-sidebar">
+        <div class="chat-header" id="chatTitle">全息公屏 (AI沉浸中)</div>
+        <div class="chat-messages" id="chatBox">
+            <div class="msg-sys">系统：已进入游戏，本阶段请仔细阅读剧本。</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="以角色的口吻说点什么...">
+            <button id="sendBtn" onclick="sendMessage()">发送</button>
+        </div>
+    </div>
+</div>
+
+<div class="clue-modal-overlay" id="clueModal">
+    <div class="clue-modal-content">
+        <div class="clue-header">
+            <div class="clue-title" id="clueModalTitle">🔍 本幕已解锁线索</div>
+            <button class="close-clue-btn" onclick="closeClueModal()">×</button>
+        </div>
+        <div class="clue-grid" id="clueGrid">
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080/api/game';
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentGameId = urlParams.get('gameId');
+    let myRoleName = '我';
+    let chatHistory = [];
+
+    // 【修改点1】：全局变量记录玩家当前正在下拉框中观看的幕次ID
+    let currentViewActId = null;
+
+    // ================= 初始化页面与剧本内容 =================
+    window.onload = async function() {
+        document.getElementById('playerName').innerText = localStorage.getItem('loginUsername') || '玩家';
+        if (!currentGameId) {
+            alert("缺少游戏进度！请从大厅重新开房。");
+            return;
+        }
+
+        try {
+            const actRes = await fetch(`${API_BASE}/content?gameId=${currentGameId}`).then(r => r.json());
+
+            if (actRes.success && actRes.data) {
+                const contentData = actRes.data;
+                // 【修改点2】：首次加载时，默认观看的是当前最新的幕次
+                currentViewActId = contentData.actId;
+
+                // 完美渲染多幕背景和机密
+                document.getElementById('scriptText').innerHTML = `
+                    <div style="margin-bottom:30px; padding:20px; background:rgba(255,153,0,0.1); border-radius:8px; border:1px solid rgba(255,153,0,0.3);">
+                        <h4 style="color:#ff9900; margin-bottom:10px;">📜 公共故事背景</h4>
+                        <div style="font-size:15px; line-height:1.8;">${contentData.publicContent}</div>
+                    </div>
+                    <div>
+                        <h4 style="color:#00e5ff; margin-bottom:10px;">🤫 您的专属机密剧情</h4>
+                        <div style="font-size:15px; line-height:1.8;">${contentData.privateContent}</div>
+                    </div>
+                `;
+
+                // 获取剧本详情以渲染幕次下拉框
+                const detailRes = await fetch(`${API_BASE}/detail?scriptId=${contentData.scriptId}`).then(r => r.json());
+                if (detailRes.success && detailRes.data && detailRes.data.acts) {
+                    const allActs = detailRes.data.acts;
+                    allActs.sort((a, b) => a.sort - b.sort); // 确保幕次按先后顺序排列
+
+                    // 找出当前进行到的幕次序号 (用于判断哪些幕次已解锁)
+                    const currentAct = allActs.find(a => a.actName === contentData.actName);
+                    const currentSort = currentAct ? currentAct.sort : 999;
+
+                    const selector = document.getElementById('actSelector');
+                    selector.innerHTML = ''; // 清空默认项
+
+                    allActs.forEach(act => {
+                        let option = document.createElement('option');
+                        option.value = act.actId;
+
+                        if (act.sort <= currentSort) {
+                            // 已解锁的幕次
+                            option.text = act.actName;
+                            if (act.actName === contentData.actName) {
+                                option.selected = true; // 默认选中当前正在进行的幕次
+                            }
+                        } else {
+                            // 未解锁的幕次
+                            option.text = `🔒 ${act.actName} (未解锁)`;
+                            option.disabled = true;
+                        }
+                        selector.appendChild(option);
+                    });
+                }
+
+                const scriptsRes = await fetch(`${API_BASE}/scripts`).then(r => r.json());
+                const script = scriptsRes.data.find(s => s.scriptId === contentData.scriptId);
+                if (script) document.getElementById('displayScriptName').innerText = `《${script.title}》`;
+
+                const rolesRes = await fetch(`${API_BASE}/roles?scriptId=${contentData.scriptId}`).then(r => r.json());
+                const myRole = rolesRes.data.find(r => r.roleId === contentData.roleId);
+                if (myRole) {
+                    myRoleName = myRole.name;
+                    document.getElementById('roleName').innerText = myRole.name;
+                    document.getElementById('roleDesc').innerText = myRole.background;
+                    if(myRole.avatar) document.getElementById('roleAvatar').src = myRole.avatar;
+                }
+            } else {
+                document.getElementById('scriptText').innerHTML = `<p style="color:red; text-align:center;">剧本加载失败：${actRes.msg}</p>`;
+            }
+        } catch (e) {
+            document.getElementById('scriptText').innerHTML = `<p style="color:red; text-align:center;">网络异常，无法连接服务器</p>`;
+        }
+    };
+
+    // ================= 线索卡相关功能 =================
+    async function openClueModal() {
+        document.getElementById('clueModal').style.display = 'flex';
+        const grid = document.getElementById('clueGrid');
+
+        // 【修改点3】：动态修改线索弹窗的标题，显示当前所在的幕次名称
+        const actSelect = document.getElementById('actSelector');
+        let actNameStr = "未知幕次";
+        if(actSelect.selectedIndex >= 0) {
+            actNameStr = actSelect.options[actSelect.selectedIndex].text;
+        }
+        document.getElementById('clueModalTitle').innerText = `🔍 ${actNameStr} - 专属线索`;
+
+        grid.innerHTML = '<div style="color:#aaa; grid-column:1/-1; text-align:center; padding-top: 20px;">正在加载线索扫描仪...</div>';
+
+        try {
+            const res = await fetch(`${API_BASE}/clues?gameId=${currentGameId}`).then(r => r.json());
+            if (res.success && res.data) {
+
+                // 【修改点4】：核心逻辑！对获取到的所有线索进行过滤，只保留 unlockChapterId 匹配当前观看幕次 currentViewActId 的线索
+                const actSpecificClues = res.data.filter(clue => clue.unlockChapterId == currentViewActId);
+
+                if (actSpecificClues.length === 0) {
+                    grid.innerHTML = '<div style="color:#aaa; grid-column:1/-1; text-align:center; padding-top: 20px;">本幕暂无发现任何线索，请继续阅读或推进剧情。</div>';
+                    return;
+                }
+
+                let html = '';
+                // 遍历过滤后的特定幕次线索
+                actSpecificClues.forEach(clue => {
+                    let isPublic = clue.isPublic === 1;
+                    let tagClass = isPublic ? 'public' : 'private';
+                    let tagName = isPublic ? '公共' : '专属机密';
+
+                    html += `
+                    <div class="clue-card">
+                        <div class="clue-name">
+                            <span>${clue.clueName}</span>
+                            <span class="clue-tag ${tagClass}">${tagName}</span>
+                        </div>
+                        <div class="clue-loc">📍 搜查地点：${clue.locationName || '未知现场'}</div>
+                        <div class="clue-desc">${clue.clueDesc || '暂无详细描述'}</div>
+                    </div>`;
+                });
+                grid.innerHTML = html;
+            } else {
+                grid.innerHTML = `<div style="color:red; grid-column:1/-1; text-align:center;">获取线索失败: ${res.msg}</div>`;
+            }
+        } catch(e) {
+            grid.innerHTML = `<div style="color:red; grid-column:1/-1; text-align:center;">网络连接异常</div>`;
+        }
+    }
+
+    function closeClueModal() {
+        document.getElementById('clueModal').style.display = 'none';
+    }
+
+    // ================= 对话与状态流转 =================
+    async function finishReading() {
+        const btn = document.getElementById('readyBtn');
+        btn.innerText = "DeepSeek 思考中 (请稍候 5~10 秒)...";
+        btn.style.background = "#555";
+        btn.disabled = true;
+
+        receiveSysMessage("系统", "【我】已阅读完毕，等待其他 AI 角色开场发言...");
+
+        try {
+            const res = await fetch(`${API_BASE}/finishReading?gameId=${currentGameId}`, { method: 'POST' }).then(r => r.json());
+
+            if (res.success && res.data && res.data.length > 0) {
+                res.data.forEach(ai => {
+                    receiveAiMessage(ai.roleName, ai.reply);
+                    chatHistory.push({ role: "assistant", content: `${ai.roleName}说：${ai.reply}` });
+                });
+            } else {
+                receiveSysMessage("系统提示", "房间内没有其他 AI 角色，或获取失败。");
+            }
+        } catch(e) {
+            receiveSysMessage("系统错误", "无法连接 AI 服务接口。");
+        } finally {
+            btn.innerText = "进入下一幕 / 结算";
+            btn.style.background = "linear-gradient(90deg, #00e5ff, #0072ff)";
+            btn.disabled = false;
+            btn.onclick = nextAct;
+        }
+    }
+
+    async function nextAct() {
+        const res = await fetch(`${API_BASE}/nextAct?gameId=${currentGameId}`, { method: 'POST' }).then(r => r.json());
+        if (res.success) {
+            if (res.data.status === 'end') {
+                alert("全剧终！剧本已经走完。即将返回大厅！");
+                window.location.href = 'room.html';
+            } else {
+                window.location.reload();
+            }
+        }
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const text = input.value.trim();
+
+        if(text) {
+            const chatBox = document.getElementById('chatBox');
+            chatBox.innerHTML += `
+                <div class="msg-item" style="align-items: flex-end; margin-top: 10px;">
+                    <div class="msg-name">${myRoleName} (我)</div>
+                    <div class="msg-bubble" style="background: linear-gradient(135deg, #ff6600, #ff3300); color: #fff;">${text}</div>
+                </div>
+            `;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+
+            chatHistory.push({ role: "user", content: `玩家扮演的【${myRoleName}】说：${text}` });
+
+            sendBtn.innerText = "AI思考中...";
+            sendBtn.disabled = true;
+            input.disabled = true;
+
+            try {
+                const res = await fetch(`${API_BASE}/chat`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        gameId: parseInt(currentGameId),
+                        history: chatHistory
+                    })
+                }).then(r => r.json());
+
+                if (res.success && res.data) {
+                    receiveAiMessage(res.data.aiName, res.data.reply);
+                    chatHistory.push({ role: "assistant", content: `${res.data.aiName}说：${res.data.reply}` });
+                } else {
+                    receiveSysMessage("系统警告", "后端大模型异常：" + res.msg);
+                }
+            } catch (e) {
+                receiveSysMessage("系统错误", "请求超时，请检查服务。");
+            } finally {
+                sendBtn.innerText = "发送";
+                sendBtn.disabled = false;
+                input.disabled = false;
+                input.focus();
+            }
+        }
+    }
+
+    function receiveSysMessage(name, text) {
+        const chatBox = document.getElementById('chatBox');
+        chatBox.innerHTML += `<div class="msg-sys" style="color:#ff3333; font-weight:bold;">${name}：${text}</div>`;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    function receiveAiMessage(name, text) {
+        const chatBox = document.getElementById('chatBox');
+        chatBox.innerHTML += `
+            <div class="msg-item" style="margin-top: 10px;">
+                <div class="msg-name" style="color:#00e5ff; font-weight:bold;">🤖 ${name}</div>
+                <div class="msg-bubble" style="background: rgba(0, 229, 255, 0.1); border: 1px solid rgba(0, 229, 255, 0.3);">
+                    ${text}
+                </div>
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    }
+
+    document.getElementById('chatInput').addEventListener('keypress', function(e) {
+        if(e.key === 'Enter') sendMessage();
+    });
+
+    // ================= 切换幕次内容 =================
+    async function loadSpecificAct(actId) {
+        if (!actId) return;
+
+        // 【修改点5】：当下拉框发生改变时，同步更新 currentViewActId 变量
+        currentViewActId = parseInt(actId);
+
+        // 增加过渡动画提示
+        document.getElementById('scriptText').innerHTML = `<p style="text-align: center; color: #ff9900;">⏳ 正在翻阅旧档案，回溯记忆中...</p>`;
+
+        try {
+            // 调用后端 /content 接口，传入特定的 actId 获取历史剧本
+            const actRes = await fetch(`${API_BASE}/content?gameId=${currentGameId}&actId=${actId}`).then(r => r.json());
+
+            if (actRes.success && actRes.data) {
+                const contentData = actRes.data;
+                document.getElementById('scriptText').innerHTML = `
+                    <div style="margin-bottom:30px; padding:20px; background:rgba(255,153,0,0.1); border-radius:8px; border:1px solid rgba(255,153,0,0.3);">
+                        <h4 style="color:#ff9900; margin-bottom:10px;">📜 公共故事背景</h4>
+                        <div style="font-size:15px; line-height:1.8;">${contentData.publicContent}</div>
+                    </div>
+                    <div>
+                        <h4 style="color:#00e5ff; margin-bottom:10px;">🤫 您的专属机密剧情</h4>
+                        <div style="font-size:15px; line-height:1.8;">${contentData.privateContent}</div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('scriptText').innerHTML = `<p style="color:red; text-align:center;">剧本加载失败：${actRes.msg}</p>`;
+            }
+        } catch (e) {
+            document.getElementById('scriptText').innerHTML = `<p style="color:red; text-align:center;">网络异常，无法连接服务器</p>`;
+        }
+    }
+</script>
+</body>
+</html>

@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI剧本杀 - 沉浸式游玩</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Microsoft YaHei', sans-serif; }
+        body { background-color: #1a1a1a; color: #e0e0e0; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        .container { width: 100%; max-width: 800px; background: #2a2a2a; border-radius: 10px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        h1, h2, h3 { color: #d4b475; text-align: center; }
+        .btn { background: #b89758; color: #fff; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-size: 16px; transition: 0.3s; margin: 10px 0; }
+        .btn:hover { background: #d4b475; }
+        .btn:disabled { background: #555; cursor: not-allowed; }
+        .view { display: none; } /* 默认隐藏所有视图 */
+        .view.active { display: block; } /* 显示当前视图 */
+
+        /* 列表样式 */
+        .card-list { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+        .card { background: #333; padding: 20px; border-radius: 8px; border-left: 5px solid #b89758; display: flex; justify-content: space-between; align-items: center; }
+        .card-info h3 { margin: 0 0 10px 0; text-align: left; }
+        .card-info p { margin: 0; color: #aaa; font-size: 14px; }
+
+        /* 剧本阅读区 */
+        .script-content { background: #222; padding: 20px; border-radius: 8px; line-height: 1.8; font-size: 16px; white-space: pre-wrap; margin-bottom: 20px; border: 1px solid #444; min-height: 200px; }
+
+        /* AI发言区 */
+        .chat-box { display: flex; margin-bottom: 15px; background: #333; padding: 15px; border-radius: 8px; }
+        .chat-avatar { width: 50px; height: 50px; background: #555; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: bold; margin-right: 15px; color: #d4b475; }
+        .chat-text { flex: 1; }
+        .chat-name { font-weight: bold; color: #d4b475; margin-bottom: 5px; }
+
+        .loading { text-align: center; color: #b89758; font-style: italic; margin: 20px 0; }
+
+        /* 标签切换样式 (用于剧本与线索的切换) */
+        .act-tabs { display: flex; gap: 10px; margin-bottom: 20px; justify-content: center; }
+        .act-tab-btn { background: #444; color: #ccc; border: none; padding: 10px 30px; border-radius: 5px; cursor: pointer; white-space: nowrap; font-size: 16px; transition: 0.2s; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .act-tab-btn:hover { background: #666; }
+        .act-tab-btn.active-tab { background: #d4b475; color: #1a1a1a; font-weight: bold; transform: scale(1.05); }
+
+        /* 翻页控件样式 */
+        .pagination-controls { display: flex; justify-content: center; align-items: center; margin-bottom: 20px; gap: 20px; background: #333; padding: 10px; border-radius: 8px; }
+        .pagination-controls span { font-size: 15px; color: #d4b475; font-weight: bold; }
+
+        /* 剧本进度下拉框样式 */
+        .act-selector-container { text-align: center; margin-bottom: 25px; background: #222; padding: 15px; border-radius: 8px; border: 1px dashed #555; }
+        .act-selector { padding: 10px 15px; font-size: 16px; background: #111; color: #d4b475; border: 1px solid #b89758; border-radius: 5px; outline: none; cursor: pointer; min-width: 250px; font-weight: bold; }
+        .act-selector:focus { border-color: #00e5ff; }
+        .act-selector option:disabled { color: #666; font-style: italic; background: #222; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <div id="view-scripts" class="view active">
+        <h1>剧本大厅</h1>
+        <p style="text-align: center;">选择一个剧本开始你的推理之旅</p>
+        <div id="script-list" class="card-list"></div>
+    </div>
+
+    <div id="view-roles" class="view">
+        <h1>选择角色</h1>
+        <button class="btn" onclick="switchView('view-scripts')">← 返回大厅</button>
+        <div id="role-list" class="card-list"></div>
+    </div>
+
+    <div id="view-play" class="view">
+
+        <div class="act-selector-container">
+            <label for="act-select" style="color: #aaa; font-size: 15px; margin-right: 10px;">📜 剧本进度：</label>
+            <select id="act-select" class="act-selector" onchange="changeAct(this.value)">
+                <option value="">加载中...</option>
+            </select>
+        </div>
+
+        <div class="act-tabs">
+            <button id="btn-tab-script" class="act-tab-btn active-tab" onclick="switchPlayTab('script')">📖 阅读剧本</button>
+            <button id="btn-tab-clue" class="act-tab-btn" onclick="switchPlayTab('clue')">🔍 本幕线索</button>
+        </div>
+
+        <div id="play-script-container">
+            <h1 id="act-title">当前幕</h1>
+            <div id="act-content" class="script-content">加载中...</div>
+            <div id="pagination-controls" class="pagination-controls"></div>
+        </div>
+
+        <div id="play-clue-container" style="display: none;">
+            <h1 id="clue-title">本幕线索</h1>
+            <div id="clue-list" class="card-list" style="margin-bottom: 20px;"></div>
+        </div>
+
+        <button id="btn-finish-read" class="btn" style="width: 100%; display: none;" onclick="finishReading()">我已阅读完毕，开始讨论</button>
+        <button id="btn-view-discuss" class="btn" style="width: 100%; display: none; background: #00e5ff; color: #111;" onclick="switchView('view-discuss')">进入 / 返回讨论阶段</button>
+    </div>
+
+    <div id="view-discuss" class="view">
+        <h1>人机讨论阶段</h1>
+        <div id="ai-loading" class="loading" style="display: none;">🤖 AI 正在疯狂思考和组织语言中，请稍候...</div>
+        <div id="chat-container"></div>
+        <button class="btn" style="width: 100%; margin-top: 10px; background: #444;" onclick="switchView('view-play')">← 返回继续看剧本/线索</button>
+        <button id="btn-next-act" class="btn" style="width: 100%; display: none; margin-top: 15px;" onclick="nextAct()">进入下一幕</button>
+    </div>
+
+    <div id="view-end" class="view">
+        <h1>游戏结束</h1>
+        <p style="text-align: center;">真相只有一个！你盘出真正的凶手了吗？</p>
+        <button class="btn" style="width: 100%;" onclick="location.reload()">返回首页</button>
+    </div>
+
+</div>
+
+<script>
+    const API_BASE = 'http://localhost:8080/api/game';
+    let currentScriptId = null;
+    let currentGameId = null;
+    let currentUserId = 1; // 模拟当前登录用户ID
+
+    // --- 全局核心状态机 ---
+    let allActs = [];               // 存放该剧本的所有幕次基本信息 (用于下拉框展示锁)
+    let unlockedActIds = [];        // 存放已经解锁过的幕次ID列表
+    let discussedActIds = [];       // 存放已经进行过AI讨论的幕次ID
+    let currentGameActId = null;    // 游戏实际进行到的最远(最新)幕次ID
+    let currentViewingActId = null; // 玩家当前正在下拉框中【查看】的幕次ID
+    let allClues = [];              // 获取到的所有线索
+
+    // 翻页相关变量
+    let currentTextPages = [];
+    let currentViewingPageIndex = 0;
+    const PAGE_SIZE = 600;
+
+    function switchView(viewId) {
+        document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+        document.getElementById(viewId).classList.add('active');
+    }
+
+    // 1. 加载剧本列表
+    async function loadScripts() {
+        try {
+            const res = await fetch(`${API_BASE}/scripts`).then(r => r.json());
+            if (res.success) {
+                const list = document.getElementById('script-list');
+                list.innerHTML = res.data.map(s => `
+                    <div class="card">
+                        <div class="card-info">
+                            <h3>${s.title} <span style="font-size:12px;color:#b89758;">(${s.difficulty} | ${s.playerCount}人)</span></h3>
+                            <p>${s.intro}</p>
+                        </div>
+                        <button class="btn" onclick="loadRoles(${s.scriptId})">查看角色</button>
+                    </div>
+                `).join('');
+            }
+        } catch (e) { console.error("加载剧本列表失败:", e); }
+    }
+
+    // 2. 加载角色列表
+    async function loadRoles(scriptId) {
+        currentScriptId = scriptId;
+        try {
+            const res = await fetch(`${API_BASE}/roles?scriptId=${scriptId}`).then(r => r.json());
+            if (res.success) {
+                const list = document.getElementById('role-list');
+                list.innerHTML = res.data.map(r => `
+                    <div class="card">
+                        <div class="card-info">
+                            <h3>${r.name} ${r.isAi === 1 ? '🤖(AI)' : '👤(玩家)'}</h3>
+                            <p>${r.background}</p>
+                        </div>
+                        ${r.isAi === 0 ? `<button class="btn" onclick="startGame(${r.roleId})">选择并开始</button>` : `<button class="btn" disabled>不可选</button>`}
+                    </div>
+                `).join('');
+                switchView('view-roles');
+            }
+        } catch (e) { console.error("加载角色列表失败:", e); }
+    }
+
+    // 3. 开始游戏
+    async function startGame(roleId) {
+        // 重置所有状态机
+        unlockedActIds = [];
+        discussedActIds = [];
+        allActs = [];
+        allClues = [];
+
+        try {
+            // 核心步骤：提前获取剧本的【所有】幕次结构信息，供下拉框渲染使用
+            const detailRes = await fetch(`${API_BASE}/detail?scriptId=${currentScriptId}`).then(r => r.json());
+            if (detailRes.success && detailRes.data) {
+                allActs = detailRes.data.acts || [];
+                allActs.sort((a, b) => a.sort - b.sort); // 确保按顺序排列
+            }
+
+            const res = await fetch(`${API_BASE}/start?userId=${currentUserId}&scriptId=${currentScriptId}&roleId=${roleId}`, { method: 'POST' }).then(r => r.json());
+            if (res.success) {
+                currentGameId = res.data.gameId;
+                currentGameActId = res.data.currentActId;
+                unlockedActIds.push(currentGameActId);
+
+                // 加载并显示游戏的最新的这幕数据
+                loadActData(currentGameActId);
+            } else {
+                alert(res.msg);
+            }
+        } catch (e) { console.error("开始游戏失败:", e); alert("网络请求失败。"); }
+    }
+
+    // --- 核心方法：加载并渲染指定ID的幕次内容（剧本+线索） ---
+    async function loadActData(actId) {
+        currentViewingActId = parseInt(actId);
+        switchView('view-play');
+        switchPlayTab('script'); // 默认切到看剧本状态
+
+        document.getElementById('act-content').innerHTML = '正在拉取记忆...';
+        document.getElementById('pagination-controls').innerHTML = '';
+        document.getElementById('btn-finish-read').style.display = 'none';
+        document.getElementById('btn-view-discuss').style.display = 'none';
+
+        try {
+            // 1. 获取指定幕的剧本内容（通过传入 actId 获取历史剧本内容）
+            const res = await fetch(`${API_BASE}/content?gameId=${currentGameId}&actId=${currentViewingActId}`).then(r => r.json());
+
+            // 2. 获取目前已解锁的所有线索
+            const clueRes = await fetch(`${API_BASE}/clues?gameId=${currentGameId}`).then(r => r.json());
+            if (clueRes.success) allClues = clueRes.data || [];
+
+            // 3. 渲染顶部的“所有幕”下拉选择框
+            renderActDropdown();
+
+            // 4. 处理并分页剧本内容
+            if (res.success && res.data) {
+                let currentData = res.data;
+                let pubText = currentData.publicContent ? `<p style="color:#b89758;font-weight:bold;">【公共剧情】</p><p>${currentData.publicContent.replace(/\n/g, '<br>')}</p>` : '';
+                let privText = currentData.privateContent ? `<p style="color:#b89758;font-weight:bold;">【专属剧情】</p><p>${currentData.privateContent.replace(/\n/g, '<br>')}</p>` : '';
+                let combinedContent = pubText + privText;
+
+                if (!combinedContent) combinedContent = "<p>（该幕暂无剧本文字内容）</p>";
+
+                let displayTitle = currentData.actName || `第 ${currentViewingActId} 幕`;
+                document.getElementById('act-title').innerText = displayTitle;
+                document.getElementById('clue-title').innerText = `${displayTitle} - 搜查到的线索`;
+
+                currentTextPages = paginateText(combinedContent, PAGE_SIZE);
+                renderPage(0);
+            } else {
+                document.getElementById('act-content').innerHTML = '拉取剧本失败：' + (res.msg || '未知错误');
+            }
+
+            // 5. 渲染对应的线索卡片
+            renderClues();
+
+        } catch (e) { console.error("拉取数据失败:", e); }
+    }
+
+    // 渲染下拉框：显示所有幕，未解锁的设为 disabled
+    function renderActDropdown() {
+        const select = document.getElementById('act-select');
+        select.innerHTML = '';
+        allActs.forEach((act, index) => {
+            const opt = document.createElement('option');
+            opt.value = act.actId;
+            let actName = act.actName || `第 ${index + 1} 幕`;
+
+            if (!unlockedActIds.includes(act.actId)) {
+                opt.disabled = true;
+                opt.innerText = actName + ' (🔒 未解锁)';
+            } else {
+                opt.innerText = actName + ' (🔓 可翻阅)';
+            }
+
+            if (act.actId === currentViewingActId) {
+                opt.selected = true;
+            }
+            select.appendChild(opt);
+        });
+    }
+
+    // 下拉框改变时触发
+    function changeAct(actId) {
+        if(actId) loadActData(actId);
+    }
+
+    // 切换剧本/线索 Tab 页面
+    function switchPlayTab(tab) {
+        if (tab === 'script') {
+            document.getElementById('play-script-container').style.display = 'block';
+            document.getElementById('play-clue-container').style.display = 'none';
+            document.getElementById('btn-tab-script').classList.add('active-tab');
+            document.getElementById('btn-tab-clue').classList.remove('active-tab');
+        } else {
+            document.getElementById('play-script-container').style.display = 'none';
+            document.getElementById('play-clue-container').style.display = 'block';
+            document.getElementById('btn-tab-script').classList.remove('active-tab');
+            document.getElementById('btn-tab-clue').classList.add('active-tab');
+        }
+    }
+
+    // 渲染本幕绑定的专属线索
+    function renderClues() {
+        const clueList = document.getElementById('clue-list');
+        // 核心逻辑：从所有解锁的线索中，过滤出属于“当前正在查看的这一幕”的线索
+        let actClues = allClues.filter(c => c.unlockChapterId == currentViewingActId);
+
+        if (actClues.length === 0) {
+            clueList.innerHTML = '<p style="text-align:center; color:#888; font-style:italic;">本幕你暂未获得任何线索...</p>';
+            return;
+        }
+
+        clueList.innerHTML = actClues.map(c => `
+            <div class="card" style="border-left: 5px solid #00e5ff;">
+                <div class="card-info">
+                    <h3 style="color:#00e5ff; margin-bottom: 5px;">🔍 ${c.clueName}
+                        ${c.isPublic == 1 ? '<span style="font-size:12px;color:#aaa;font-weight:normal;">(公开线索)</span>' : '<span style="font-size:12px;color:#d4b475;font-weight:normal;">(你的私密线索)</span>'}
+                    </h3>
+                    <p style="color:#eee; font-size:15px; margin-top:5px;">${c.clueDesc || '暂无描述'}</p>
+                </div>
+            </div>
+        `).join('');
+    }
+
+    // 智能文本分页功能 (兼容 HTML)
+    function paginateText(text, pageSize) {
+        if (!text) return ["<p>无内容</p>"];
+        let pages = [];
+        if (text.includes('</p>')) {
+            let parts = text.split('</p>');
+            parts = parts.filter(p => p.trim() !== '');
+            let currentPage = "";
+            for (let i = 0; i < parts.length; i++) {
+                let part = parts[i] + '</p>';
+                let pureTextLength = part.replace(/<[^>]+>/g, '').length;
+                let currentPureLength = currentPage.replace(/<[^>]+>/g, '').length;
+                if (currentPureLength + pureTextLength > pageSize && currentPage.length > 0) {
+                    pages.push(currentPage);
+                    currentPage = part;
+                } else {
+                    currentPage += part;
+                }
+            }
+            if (currentPage.trim().length > 0) pages.push(currentPage);
+        } else {
+            let lines = text.split('\n');
+            let currentPage = "";
+            for (let line of lines) {
+                if (currentPage.length + line.length > pageSize && currentPage.length > 0) {
+                    pages.push(currentPage);
+                    currentPage = line + '\n';
+                } else {
+                    currentPage += line + '\n';
+                }
+            }
+            if (currentPage.trim().length > 0) pages.push(currentPage);
+        }
+        return pages.length > 0 ? pages : ["无内容"];
+    }
+
+    // 渲染指定的剧本页码
+    function renderPage(pageIndex) {
+        currentViewingPageIndex = pageIndex;
+        document.getElementById('act-content').innerHTML = currentTextPages[pageIndex];
+
+        // 判断：是否在看游戏最新进度的幕 && 是否是最后一页
+        const isLatestAct = (currentViewingActId === currentGameActId);
+        const isLastPage = (currentViewingPageIndex === currentTextPages.length - 1);
+        const alreadyDiscussed = discussedActIds.includes(currentViewingActId);
+
+        const pageControls = document.getElementById('pagination-controls');
+        if (currentTextPages.length > 1) {
+            pageControls.style.display = 'flex';
+            pageControls.innerHTML = `
+                <button class="btn" onclick="prevPage()" ${pageIndex === 0 ? 'disabled' : ''}>← 上一页</button>
+                <span>第 ${pageIndex + 1} / ${currentTextPages.length} 页</span>
+                <button class="btn" onclick="nextPage()" ${pageIndex === currentTextPages.length - 1 ? 'disabled' : ''}>下一页 →</button>
+            `;
+        } else {
+            pageControls.style.display = 'none';
+            pageControls.innerHTML = '';
+        }
+
+        // 按钮显示逻辑
+        const finishBtn = document.getElementById('btn-finish-read');
+        const viewDiscussBtn = document.getElementById('btn-view-discuss');
+
+        if (isLatestAct && isLastPage) {
+            if (!alreadyDiscussed) {
+                // 如果是最新幕且没讨论过，显示讨论触发按钮
+                finishBtn.style.display = 'block';
+                viewDiscussBtn.style.display = 'none';
+            } else {
+                // 如果已经讨论过了，给个快捷键回到聊天室
+                finishBtn.style.display = 'none';
+                viewDiscussBtn.style.display = 'block';
+            }
+        } else {
+            // 在看以前的幕次时，隐藏这些按钮
+            finishBtn.style.display = 'none';
+            viewDiscussBtn.style.display = 'none';
+        }
+    }
+
+    function prevPage() {
+        if (currentViewingPageIndex > 0) {
+            renderPage(currentViewingPageIndex - 1);
+            window.scrollTo(0, 0);
+        }
+    }
+
+    function nextPage() {
+        if (currentViewingPageIndex < currentTextPages.length - 1) {
+            renderPage(currentViewingPageIndex + 1);
+            window.scrollTo(0, 0);
+        }
+    }
+
+    // 5. 读完剧本，获取 AI 发言
+    async function finishReading() {
+        switchView('view-discuss');
+        document.getElementById('chat-container').innerHTML = '';
+        document.getElementById('btn-next-act').style.display = 'none';
+        document.getElementById('ai-loading').style.display = 'block';
+
+        try {
+            const res = await fetch(`${API_BASE}/finishReading?gameId=${currentGameId}`, { method: 'POST' }).then(r => r.json());
+            document.getElementById('ai-loading').style.display = 'none';
+
+            if (res.success) {
+                // 标记当前最新幕为已讨论
+                discussedActIds.push(currentGameActId);
+
+                const chatBox = document.getElementById('chat-container');
+                res.data.forEach(ai => {
+                    chatBox.innerHTML += `
+                        <div class="chat-box">
+                            <div class="chat-avatar">${ai.roleName.substring(0,1)}</div>
+                            <div class="chat-text">
+                                <div class="chat-name">${ai.roleName} (AI)</div>
+                                <div style="line-height: 1.6;">${ai.reply.replace(/\n/g, '<br>')}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                document.getElementById('btn-next-act').style.display = 'block';
+            } else {
+                alert('获取AI发言失败: ' + res.msg);
+                document.getElementById('btn-next-act').style.display = 'block';
+            }
+        } catch (e) {
+            console.error("AI生成发言异常:", e);
+            document.getElementById('ai-loading').style.display = 'none';
+            alert('请求AI超时或报错，请重试');
+        }
+    }
+
+    // 6. 进入下一幕
+    async function nextAct() {
+        try {
+            const res = await fetch(`${API_BASE}/nextAct?gameId=${currentGameId}`, { method: 'POST' }).then(r => r.json());
+            if (res.success) {
+                if (res.data.status === 'end') {
+                    switchView('view-end');
+                } else {
+                    // 更新游戏进度到下一幕，并解锁
+                    currentGameActId = res.data.currentActId;
+                    if (!unlockedActIds.includes(currentGameActId)) {
+                        unlockedActIds.push(currentGameActId);
+                    }
+                    // 加载并渲染下一幕的数据
+                    loadActData(currentGameActId);
+                }
+            } else {
+                alert(res.msg);
+            }
+        } catch (e) { console.error("进入下一幕失败:", e); alert('进入下一幕网络请求失败'); }
+    }
+
+    // 初始化加载大厅
+    window.onload = loadScripts;
+</script>
+</body>
+</html>

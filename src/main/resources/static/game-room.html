@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剧遇 - 等待房间</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", sans-serif; }
+        body { width: 100vw; height: 100vh; background: url("images/bg.jpg") no-repeat center center; background-size: cover; display: flex; padding: 20px; color: #fff; overflow: hidden; }
+
+        .container { display: flex; gap: 20px; width: 100%; height: 100%; background: rgba(15, 20, 35, 0.85); backdrop-filter: blur(15px); border-radius: 20px; padding: 30px; border: 1px solid rgba(255,255,255,0.1); }
+        .room-main { flex: 2; display: flex; flex-direction: column; }
+        .room-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid rgba(255,255,255,0.1); padding-bottom: 20px; margin-bottom: 30px; }
+        .room-title-box h1 { font-size: 28px; color: #ff9900; margin-bottom: 5px; }
+        .room-title-box h1.ai-mode-text { color: #00e5ff; text-shadow: 0 0 10px rgba(0,229,255,0.5); }
+        .room-title-box p { font-size: 16px; color: #aaa; }
+        .back-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #fff; transition: 0.3s; }
+        .back-btn:hover { background: #ff3333; border-color: #ff3333; }
+        .seats-container { flex: 1; display: flex; flex-wrap: wrap; justify-content: center; align-content: center; gap: 20px; padding: 20px; overflow-y: auto; }
+        .player-seat { width: 130px; height: 160px; background: rgba(0,0,0,0.3); border: 2px dashed rgba(255,255,255,0.2); border-radius: 15px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; transition: 0.3s; }
+        .player-seat.occupied { border: 2px solid #ff6600; background: rgba(255,102,0,0.05); }
+        .player-seat.occupied.ai-seat { border: 2px solid #00e5ff; background: rgba(0,229,255,0.05); }
+        .seat-avatar { width: 70px; height: 70px; border-radius: 50%; background: #333; margin-bottom: 15px; display: flex; align-items: center; justify-content: center; font-size: 24px; color: #666; overflow: hidden; }
+        .occupied .seat-avatar { border: 3px solid #ff6600; color: #fff; font-weight: bold; }
+        .occupied.ai-seat .seat-avatar { border: 3px solid #00e5ff; }
+        .seat-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .seat-name { font-size: 14px; color: #888; text-align: center; padding: 0 5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+        .occupied .seat-name { color: #fff; font-weight: bold; }
+        .occupied.ai-seat .seat-name { color: #00e5ff; }
+        .ready-badge { position: absolute; top: -10px; right: -10px; background: #28a745; color: #fff; font-size: 12px; padding: 3px 8px; border-radius: 10px; display: none; }
+        .occupied.ready .ready-badge { display: block; }
+        .occupied.ai-seat.ready .ready-badge { background: #00b4db; box-shadow: 0 0 8px rgba(0,229,255,0.6); }
+        .action-bar { margin-top: 20px; text-align: center; }
+        .start-btn { padding: 15px 50px; font-size: 20px; font-weight: bold; border-radius: 30px; border: none; background: linear-gradient(90deg, #ff6600, #ff3300); color: #fff; cursor: pointer; transition: 0.3s; box-shadow: 0 5px 20px rgba(255,102,0,0.4); }
+        .start-btn:hover { transform: translateY(-3px); box-shadow: 0 8px 25px rgba(255,102,0,0.6); }
+        .start-btn.ai-ready-btn { background: linear-gradient(90deg, #00b4db, #0083b0); box-shadow: 0 5px 20px rgba(0,180,219,0.4); animation: pulseBtn 2s infinite; }
+        @keyframes pulseBtn { 0% { transform: scale(1); } 50% { transform: scale(1.05); box-shadow: 0 10px 30px rgba(0,229,255,0.6); } 100% { transform: scale(1); } }
+        .room-chat { flex: 1; background: rgba(0,0,0,0.4); border-radius: 15px; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.05); }
+        .chat-header { padding: 20px; border-bottom: 1px solid rgba(255,255,255,0.1); font-size: 18px; font-weight: bold; color: #ddd; display: flex; justify-content: space-between;}
+        .chat-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+        .msg-sys { text-align: center; color: #888; font-size: 13px; margin: 10px 0;}
+        .msg-item { display: flex; flex-direction: column; animation: fadeIn 0.3s forwards; }
+        .msg-name { font-size: 12px; color: #aaa; margin-bottom: 3px; }
+        .msg-bubble { background: rgba(255,255,255,0.1); padding: 10px 15px; border-radius: 10px; width: fit-content; max-width: 80%; font-size: 14px; }
+        @keyframes fadeIn { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+        .chat-input { padding: 15px; display: flex; gap: 10px; border-top: 1px solid rgba(255,255,255,0.1); }
+        .chat-input input { flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #fff; padding: 10px; border-radius: 8px; outline: none; }
+        .chat-input button { background: #ff6600; color: #fff; border: none; padding: 0 20px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="room-main">
+        <div class="room-header">
+            <div class="room-title-box">
+                <h1 id="displayRoomName">加载中...</h1>
+                <p>当前剧本：《<span id="displayScriptName">---</span>》 | 人数: <span id="displayPlayerCount" style="color:#ffcc00; font-weight:bold;">1/?</span> | 房间号: <span style="font-family: monospace;">#8848</span></p>
+            </div>
+            <button class="back-btn" onclick="leaveRoom()">解散房间</button>
+        </div>
+        <div class="seats-container" id="seatsContainer"></div>
+        <div class="action-bar">
+            <button class="start-btn" id="startGameBtn" onclick="startGame()">人满开局</button>
+        </div>
+    </div>
+    <div class="room-chat">
+        <div class="chat-header">
+            <span>房间频道</span>
+            <span id="modeTag" style="font-size:12px; background:rgba(255,255,255,0.1); padding:3px 8px; border-radius:10px;">🌐 联机模式</span>
+        </div>
+        <div class="chat-messages" id="chatBox">
+            <div class="msg-sys">系统：欢迎来到剧遇，祝您体验愉快。</div>
+            <div class="msg-sys" style="color: #ff9900;" id="sysWelcomeMsg">系统：您创建了房间，请等待其他玩家加入。</div>
+        </div>
+        <div class="chat-input">
+            <input type="text" id="chatInput" placeholder="发句语音或文字打个招呼吧...">
+            <button onclick="sendMessage()">发送</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentMode = 'online';
+    const API_BASE = '/api/game';
+    let targetScriptId = null;
+
+    window.onload = function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const roomName = urlParams.get('roomName') || '专属房间';
+        const scriptName = urlParams.get('script') || '未命名剧本';
+        const username = localStorage.getItem('loginUsername') || '房主';
+
+        // 核心修复：严谨拦截 URL 中的 undefined，确保向后端发送真实的 ID
+        const idParam = urlParams.get('scriptId');
+        if (!idParam || idParam === "undefined" || idParam === "null") {
+            alert("系统错误：剧本ID获取失败，请返回大厅重新选择！");
+            window.location.href = 'room.html';
+            return;
+        }
+
+        targetScriptId = parseInt(idParam);
+        currentMode = urlParams.get('mode') || 'online';
+
+        document.getElementById('displayRoomName').innerText = roomName;
+        document.getElementById('displayScriptName').innerText = scriptName;
+
+        let totalSeats = 3;
+        const seatsContainer = document.getElementById('seatsContainer');
+        let seatsHtml = '';
+
+        if (currentMode === 'ai') {
+            document.getElementById('displayRoomName').classList.add('ai-mode-text');
+            document.getElementById('modeTag').innerHTML = '🤖 AI 沉浸模式';
+            document.getElementById('modeTag').style.color = '#00e5ff';
+            document.getElementById('modeTag').style.background = 'rgba(0,229,255,0.1)';
+            document.getElementById('displayPlayerCount').innerText = `${totalSeats}/${totalSeats}`;
+
+            document.getElementById('sysWelcomeMsg').innerText = "系统：已连接大模型引擎，AI剧友已落座，随时发车！";
+            document.getElementById('sysWelcomeMsg').style.color = "#00e5ff";
+
+            const startBtn = document.getElementById('startGameBtn');
+            startBtn.innerText = "全员就绪，立即开局";
+            startBtn.classList.add('ai-ready-btn');
+
+            const aiNames = ["AI玩家1", "AI玩家2", "AI玩家3"];
+            for (let i = 0; i < totalSeats; i++) {
+                if (i === 0) {
+                    seatsHtml += `
+                        <div class="player-seat occupied ready">
+                            <div class="ready-badge">已准备</div>
+                            <div class="seat-avatar"><img src="images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp" onerror="this.src='';"></div>
+                            <div class="seat-name">${username} (我)</div>
+                        </div>`;
+                } else {
+                    seatsHtml += `
+                        <div class="player-seat occupied ai-seat ready">
+                            <div class="ready-badge">AI 准备</div>
+                            <div class="seat-avatar"><img src="https://via.placeholder.com/70/1a3a5a/00e5ff?text=AI"></div>
+                            <div class="seat-name">🤖 ${aiNames[i-1]}</div>
+                        </div>`;
+                }
+            }
+        } else {
+            document.getElementById('displayPlayerCount').innerText = `1/${totalSeats}`;
+            seatsHtml += `
+                <div class="player-seat occupied ready">
+                    <div class="ready-badge">已准备</div>
+                    <div class="seat-avatar"><img src="images/avatar_1771915686380_60dfede0789e6e876c73b9d77b1b54c8.webp" onerror="this.src='';"></div>
+                    <div class="seat-name">${username} (我)</div>
+                </div>`;
+            for (let i = 1; i < totalSeats; i++) {
+                seatsHtml += `
+                    <div class="player-seat">
+                        <div class="seat-avatar">?</div>
+                        <div class="seat-name">等待加入...</div>
+                    </div>`;
+            }
+        }
+        seatsContainer.innerHTML = seatsHtml;
+    }
+
+    function leaveRoom() {
+        if(confirm("确定要解散/退出当前房间吗？")) {
+            window.location.href = `room.html`;
+        }
+    }
+
+    async function startGame() {
+        if (currentMode !== 'ai') {
+            alert("系统提示：当前房间真人玩家人数不足，无法开启剧本！");
+            return;
+        }
+
+        const startBtn = document.getElementById('startGameBtn');
+        startBtn.innerText = "引擎启动中...";
+        startBtn.disabled = true;
+
+        try {
+            // 核心修复：增加对登录状态 userId 的获取与校验
+            const userIdStr = localStorage.getItem('userId');
+            if (!userIdStr || userIdStr === "undefined") {
+                alert("登录状态已失效，请重新登录！");
+                window.location.href = 'login.html';
+                return;
+            }
+            const userId = parseInt(userIdStr);
+
+            // 1. 获取这个剧本有哪些合法角色
+            const rolesRes = await fetch(`${API_BASE}/roles?scriptId=${targetScriptId}`).then(r => {
+                if(!r.ok) throw new Error("获取角色接口异常");
+                return r.json();
+            });
+
+            if (!rolesRes.success || !rolesRes.data || rolesRes.data.length === 0) {
+                alert("该剧本尚未配置角色，无法开局！");
+                startBtn.innerText = "全员就绪，立即开局";
+                startBtn.disabled = false;
+                return;
+            }
+
+            // 2. 默认选第一个角色分配给房主
+            const targetRoleId = rolesRes.data[0].roleId;
+
+            // 3. 调用开局接口
+            const res = await fetch(`${API_BASE}/start?userId=${userId}&scriptId=${targetScriptId}&roleId=${targetRoleId}`, {
+                method: 'POST'
+            }).then(r => r.json());
+
+            if (res.success) {
+                alert("🚀 房间全员就绪！AI 大模型引擎启动成功！\n即将为您载入专属剧情...");
+                window.location.href = `play.html?gameId=${res.data.gameId}`;
+            } else {
+                alert("开局失败：" + res.msg);
+                startBtn.innerText = "重新开局";
+                startBtn.disabled = false;
+            }
+        } catch (error) {
+            console.error("Game Room Error:", error);
+            alert("网络连接异常，请检查后端服务是否启动！错误：" + error.message);
+            startBtn.innerText = "全员就绪，立即开局";
+            startBtn.disabled = false;
+        }
+    }
+
+    function sendMessage() {
+        const input = document.getElementById('chatInput');
+        const text = input.value.trim();
+        if(text) {
+            const chatBox = document.getElementById('chatBox');
+            const username = localStorage.getItem('loginUsername') || '我';
+            chatBox.innerHTML += `
+                <div class="msg-item" style="align-items: flex-end; margin-top: 10px;">
+                    <div class="msg-name">${username}</div>
+                    <div class="msg-bubble" style="background: linear-gradient(135deg, #ff6600, #ff3300); color: #fff;">${text}</div>
+                </div>
+            `;
+            input.value = '';
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    }
+    document.getElementById('chatInput').addEventListener('keypress', function(e) {
+        if(e.key === 'Enter') sendMessage();
+    });
+</script>
+</body>
+</html>

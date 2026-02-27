@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>剧遇 - 浏览记录</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: "Microsoft Yahei", sans-serif; }
+        body { width: 100vw; height: 100vh; background: url("images/bg.jpg") no-repeat center center; background-size: cover; display: flex; padding: 20px; overflow: hidden; }
+        .sidebar { width: 280px; height: 100%; background: linear-gradient(180deg, rgba(15,26,58,0.9), rgba(26,42,90,0.9)); border-radius: 20px; padding: 40px 20px; display: flex; flex-direction: column; backdrop-filter: blur(10px); }
+        .sidebar-logo { text-align: center; margin-bottom: 50px; }
+        .sidebar-logo h2 { color: #fff; font-size: 42px; display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .sidebar-logo .star { width: 25px; height: 35px; background: #ff6600; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); }
+        .menu-list { flex: 1; display: flex; flex-direction: column; gap: 15px; }
+        .menu-item { width: 100%; height: 60px; background: transparent; border: none; border-radius: 12px; color: #fff; font-size: 18px; display: flex; align-items: center; padding: 0 20px; gap: 15px; cursor: pointer; opacity: 0.7; }
+        .menu-item.active { background: linear-gradient(90deg, #ff6600, #ff3300); opacity: 1; }
+
+        .main-content { flex: 1; height: 100%; background: rgba(18, 22, 33, 0.85); backdrop-filter: blur(15px); border-radius: 20px; margin-left: 20px; padding: 40px; display: flex; flex-direction: column; border: 1px solid rgba(255,255,255,0.1); }
+        .header-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; }
+        .page-title { font-size: 28px; color: #fff; font-weight: bold; display: flex; align-items: center; gap: 10px; }
+        .back-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 10px 20px; border-radius: 8px; cursor: pointer; color: #fff; transition: 0.3s; }
+        .back-btn:hover { background: #ff6600; border-color: #ff6600; }
+
+        /* 浏览列表 */
+        .browse-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; padding-right: 10px; }
+        .browse-list::-webkit-scrollbar { width: 6px; }
+        .browse-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        .browse-item { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px 20px; display: flex; align-items: center; gap: 20px; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s; }
+        .browse-item:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.15); }
+        .b-cover { width: 50px; height: 70px; border-radius: 6px; background: #444; object-fit: cover; }
+        .b-info { flex: 1; }
+        .b-title { font-size: 18px; color: #fff; font-weight: bold; margin-bottom: 5px; }
+        .b-tags span { background: rgba(255,255,255,0.1); color: #ccc; font-size: 12px; padding: 2px 6px; border-radius: 4px; margin-right: 5px; }
+        .b-time { font-size: 13px; color: #888; }
+        .btn-view { background: none; border: 1px solid #ff6600; color: #ff6600; padding: 8px 15px; border-radius: 8px; cursor: pointer; transition: 0.3s; font-weight: bold; }
+        .btn-view:hover { background: #ff6600; color: #fff; }
+    </style>
+</head>
+<body>
+<div class="sidebar">
+    <div class="sidebar-logo"><h2><span class="star"></span>剧遇</h2></div>
+    <div class="menu-list">
+        <button class="menu-item" onclick="goToProfile()"><span>👤</span><span>个人信息</span></button>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="header-top">
+        <h1 class="page-title">🔖 浏览记录</h1>
+        <button class="back-btn" onclick="goToProfile()">← 返回个人中心</button>
+    </div>
+
+    <div class="browse-list">
+        <div class="browse-item">
+            <div class="b-cover" style="background-color: #533;"></div>
+            <div class="b-info">
+                <div class="b-title">拆迁暴发户</div>
+                <div class="b-tags"><span>欢乐</span><span>机制</span></div>
+            </div>
+            <div class="b-time">刚刚看过</div>
+            <button class="btn-view" onclick="alert('即将跳转至剧本详情页')">再次查看</button>
+        </div>
+
+        <div class="browse-item">
+            <div class="b-cover" style="background-color: #2a1b4a;"></div>
+            <div class="b-info">
+                <div class="b-title">代码杀机</div>
+                <div class="b-tags"><span>程序员</span><span>原创</span></div>
+            </div>
+            <div class="b-time">2小时前</div>
+            <button class="btn-view" onclick="alert('即将跳转至剧本详情页')">再次查看</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function goToProfile() {
+        const username = localStorage.getItem('loginUsername') || '';
+        window.location.href = `profile.html?username=${encodeURIComponent(username)}`;
+    }
+</script>
+</body>
+</html>
